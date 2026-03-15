@@ -106,7 +106,31 @@ export const useToolsList = () => {
       description: 'Build Docker Compose and Stack files visually with validation and download.',
       category: { icon: 'i-lucide-layers', label: 'Developer' },
     },
-
+    {
+      label: 'Image Cropper',
+      description: 'Crop images to any aspect ratio with precision.',
+      category: { icon: 'i-lucide-crop', label: 'Image' },
+    },
+    {
+      label: 'Image Resizer',
+      description: 'Change image dimensions while maintaining quality.',
+      category: { icon: 'i-lucide-scaling', label: 'Image' },
+    },
+    {
+      label: 'Image Converter',
+      description: 'Convert between PNG, JPG, WebP, and other formats.',
+      category: { icon: 'i-lucide-refresh-ccw', label: 'Image' },
+    },
+    {
+      label: 'Image Compressor',
+      description: 'Optimize and compress images for faster web loading.',
+      category: { icon: 'i-lucide-shrink', label: 'Image' },
+    },
+    {
+      label: 'SVG to PNG Converter',
+      description: 'Quickly convert SVG vector files to PNG images.',
+      category: { icon: 'i-lucide-file-image', label: 'Image' },
+    },
   ]
 
   return { tools }

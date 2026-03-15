@@ -9,6 +9,7 @@ const { tools } = useToolsList()
         <UPageCard
           v-for="(tool, index) in tools"
           :key="index"
+          :icon="tool.icon"
           :title="tool.label"
           :description="tool.description" />
       </UPageGrid>
