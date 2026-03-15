@@ -159,6 +159,130 @@ export const useToolsList = () => {
       description: 'Quickly convert SVG vector files to PNG images.',
       category: { icon: 'i-lucide-image', label: 'Image' },
     },
+    // Security / Crypto
+    {
+      icon: 'i-lucide-shield',
+      label: 'Hash Generator',
+      description: 'Generate MD5, SHA-1, SHA-256, and SHA-512 hashes from text.',
+      category: { icon: 'i-lucide-shield-check', label: 'Security' },
+    },
+    {
+      icon: 'i-lucide-key-round',
+      label: 'Password Generator',
+      description: 'Generate strong, random passwords with custom rules.',
+      category: { icon: 'i-lucide-shield-check', label: 'Security' },
+    },
+    {
+      icon: 'i-lucide-ticket',
+      label: 'JWT Decoder',
+      description: 'Decode and inspect JSON Web Token headers and payloads.',
+      category: { icon: 'i-lucide-shield-check', label: 'Security' },
+    },
+    {
+      icon: 'i-lucide-lock-keyhole',
+      label: 'Bcrypt Hash Generator',
+      description: 'Hash and verify passwords using the bcrypt algorithm.',
+      category: { icon: 'i-lucide-shield-check', label: 'Security' },
+    },
+    {
+      icon: 'i-lucide-scan-line',
+      label: 'HMAC Generator',
+      description: 'Generate HMAC signatures using SHA-256, SHA-512 and more.',
+      category: { icon: 'i-lucide-shield-check', label: 'Security' },
+    },
+    {
+      icon: 'i-lucide-shuffle',
+      label: 'Random String Generator',
+      description: 'Generate cryptographically secure random strings and tokens.',
+      category: { icon: 'i-lucide-shield-check', label: 'Security' },
+    },
+    // Text
+    {
+      icon: 'i-lucide-type',
+      label: 'Case Converter',
+      description: 'Convert text between camelCase, snake_case, PascalCase, and more.',
+      category: { icon: 'i-lucide-text', label: 'Text' },
+    },
+    {
+      icon: 'i-lucide-file-pen-line',
+      label: 'Lorem Ipsum Generator',
+      description: 'Generate dummy lorem ipsum placeholder text for layouts.',
+      category: { icon: 'i-lucide-text', label: 'Text' },
+    },
+    {
+      icon: 'i-lucide-bar-chart-2',
+      label: 'Word & Char Counter',
+      description: 'Count words, characters, sentences, and paragraphs in your text.',
+      category: { icon: 'i-lucide-text', label: 'Text' },
+    },
+    {
+      icon: 'i-lucide-replace',
+      label: 'Text Replace',
+      description: 'Find and replace text with plain or regex patterns.',
+      category: { icon: 'i-lucide-text', label: 'Text' },
+    },
+    {
+      icon: 'i-lucide-list-ordered',
+      label: 'List Sorter / Deduplicator',
+      description: 'Sort, deduplicate, and clean lists of text lines instantly.',
+      category: { icon: 'i-lucide-text', label: 'Text' },
+    },
+    {
+      icon: 'i-lucide-wrap-text',
+      label: 'Text Formatter',
+      description: 'Trim, normalize whitespace, and clean up messy text.',
+      category: { icon: 'i-lucide-text', label: 'Text' },
+    },
+    // Color
+    {
+      icon: 'i-lucide-pipette',
+      label: 'Color Picker & Converter',
+      description: 'Pick colors and convert between HEX, RGB, HSL, and HSV.',
+      category: { icon: 'i-lucide-palette', label: 'Color' },
+    },
+    {
+      icon: 'i-lucide-swatch-book',
+      label: 'Color Palette Generator',
+      description: 'Generate harmonious color palettes from a base color.',
+      category: { icon: 'i-lucide-palette', label: 'Color' },
+    },
+    {
+      icon: 'i-lucide-contrast',
+      label: 'Contrast Checker',
+      description: 'Check WCAG contrast ratio between foreground and background colors.',
+      category: { icon: 'i-lucide-palette', label: 'Color' },
+    },
+    {
+      icon: 'i-lucide-blend',
+      label: 'Gradient Generator',
+      description: 'Build CSS gradients visually and copy the code.',
+      category: { icon: 'i-lucide-palette', label: 'Color' },
+    },
+    // Network
+    {
+      icon: 'i-lucide-circle-help',
+      label: 'HTTP Status Codes',
+      description: 'Look up every HTTP status code with its meaning and usage.',
+      category: { icon: 'i-lucide-globe', label: 'Network' },
+    },
+    {
+      icon: 'i-lucide-file-type',
+      label: 'MIME Type Lookup',
+      description: 'Find the MIME type for any file extension and vice versa.',
+      category: { icon: 'i-lucide-globe', label: 'Network' },
+    },
+    {
+      icon: 'i-lucide-waypoints',
+      label: 'DNS Lookup',
+      description: 'Query DNS records (A, AAAA, MX, TXT, CNAME) for any domain.',
+      category: { icon: 'i-lucide-globe', label: 'Network' },
+    },
+    {
+      icon: 'i-lucide-map-pin',
+      label: 'IP Info Lookup',
+      description: 'Geolocate any IP address and view its ASN and ISP details.',
+      category: { icon: 'i-lucide-globe', label: 'Network' },
+    },
   ]
 
   return { tools }
