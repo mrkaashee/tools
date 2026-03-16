@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import type { ImgHandlerProps } from '../types/editor'
 
 defineProps<ImgHandlerProps>()
@@ -35,7 +35,7 @@ const posClasses = {
     <div
       class="w-2.5 h-2.5 bg-white rounded-xs border-[1.5px] border-inverted relative z-10 transition-all duration-200 shadow-sm
              group-hover:bg-primary group-hover:border-white group-hover:rounded-full
-             in-[.is-active]:bg-primary in-[.is-active]:border-white in-[.is-active]:shadow-[0_0_10px_--theme(--color-primary-500/0.5)]" />
+             [.group.is-active_&]:bg-primary [.group.is-active_&]:border-white [.group.is-active_&]:shadow-[0_0_10px_rgba(var(--color-primary-500),0.5)]" />
 
     <!-- Glow Effect -->
     <div

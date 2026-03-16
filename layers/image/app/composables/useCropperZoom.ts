@@ -1,5 +1,5 @@
 import { ref, computed, type Ref } from 'vue'
-import type { ImageSize } from './useCropper'
+import type { ImageSize } from '../types/cropper'
 
 export interface ZoomOptions {
   minZoom: number

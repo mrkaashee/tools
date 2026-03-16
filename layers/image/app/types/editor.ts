@@ -79,10 +79,11 @@ export interface ImageEditorContext {
   panY: Ref<number>
   fixedOverlayRef?: Ref<HTMLDivElement | null>
   fixedStencil: ComputedRef<boolean | undefined>
-  loadImage: (src: string) => Promise<void>
+  loadImage: (src: string, skipCommit?: boolean, skipFit?: boolean) => Promise<void>
   updateCanvas: (imageData: string | HTMLCanvasElement, skipDataUrl?: boolean) => void
   activateTool: (tool: string) => void
   deactivateTool: () => void
+  cancelTool: () => void
   getCanvas: () => HTMLCanvasElement | null
   getImageState: () => ImageState
   commit: (imageData: string | HTMLCanvasElement, tool: string) => void

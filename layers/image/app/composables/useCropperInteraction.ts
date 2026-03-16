@@ -1,4 +1,6 @@
+import { ref, type Ref } from 'vue'
 import { useEventListener } from '@vueuse/core'
+import type { CropArea, ImageSize, DisplayGeometry, CropperMode, CropperShape } from '../types/cropper'
 
 type InteractionKind = 'move-box' | 'resize' | 'resize-circle' | 'pan' | null
 

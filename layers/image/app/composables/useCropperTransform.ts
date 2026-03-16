@@ -1,6 +1,5 @@
-﻿import { ref, computed, readonly, type Ref } from 'vue'
-import type { ImageSize, CropArea } from './useCropper'
-import type { TransformState, TransformOptions, TransformChangeEvent } from '../types/cropper'
+import { ref, computed, readonly, type Ref } from 'vue'
+import type { ImageSize, CropArea, TransformState, TransformOptions, TransformChangeEvent } from '../types/cropper'
 
 /**
  * Default transform options

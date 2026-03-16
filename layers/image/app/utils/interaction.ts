@@ -1,3 +1,5 @@
+import type { CropArea as Rect } from '../types/cropper'
+
 /**
  * Utility to get normalized point from mouse or touch event
  */
@@ -5,12 +7,7 @@ export const getEventPoint = (e: MouseEvent | TouchEvent) => {
   return 'touches' in e ? e.touches[0] : e
 }
 
-export interface Rect {
-  x: number
-  y: number
-  width: number
-  height: number
-}
+export type { Rect }
 
 export interface ResizeOptions {
   aspectRatio?: number

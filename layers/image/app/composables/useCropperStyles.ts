@@ -1,6 +1,5 @@
-﻿import { computed, type Ref } from 'vue'
-import type { CropArea, ImageSize, DisplayGeometry, CropperMode } from './useCropper'
-import type { TransformState } from '../types/cropper'
+import { computed, type Ref } from 'vue'
+import type { CropArea, ImageSize, DisplayGeometry, CropperMode, TransformState } from '../types/cropper'
 
 export function useCropperStyles(
   crop: Ref<CropArea>,
@@ -10,7 +9,8 @@ export function useCropperStyles(
   display: Ref<DisplayGeometry>,
   mode: CropperMode,
   transformState?: Ref<Readonly<TransformState>>,
-  transformDuration?: number
+  transformDuration?: number,
+  isInteracting?: Ref<boolean>
 ) {
   /**
    * Check if user prefers reduced motion
@@ -72,7 +72,8 @@ export function useCropperStyles(
 
       // Apply transition duration (default 300ms if not provided)
       // Respect prefers-reduced-motion: apply transformations instantly if user prefers reduced motion
-      if (!prefersReducedMotion()) {
+      // Also disable transition during active interaction to prevent lag
+      if (!prefersReducedMotion() && !isInteracting?.value) {
         const duration = transformDuration ?? 300
         baseStyle.transition = `transform ${duration}ms ease-out`
       }
@@ -144,7 +145,8 @@ export function useCropperStyles(
 
       // Apply transition duration (default 300ms if not provided)
       // Respect prefers-reduced-motion: apply transformations instantly if user prefers reduced motion
-      if (!prefersReducedMotion()) {
+      // Also disable transition during active interaction to prevent lag
+      if (!prefersReducedMotion() && !isInteracting?.value) {
         const duration = transformDuration ?? 300
         baseStyle.transition = `transform ${duration}ms ease-out`
       }

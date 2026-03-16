@@ -1,55 +1,11 @@
-﻿import { ref, computed } from 'vue'
+import { ref, computed, type Ref } from 'vue'
 import { useCropperTransform } from './useCropperTransform'
-import type { TransformOptions, TransformChangeEvent } from '../types/cropper'
+import type { TransformOptions, TransformChangeEvent, CropArea, ImageSize, DisplayGeometry, CropperMode, CropperShape, UseCropperOptions } from '../types/cropper'
 
-export interface CropArea {
-  x: number
-  y: number
-  width: number
-  height: number
-}
-
-export interface ImageSize {
-  width: number
-  height: number
-}
-
-export interface DisplayGeometry {
-  scale: number
-  baseScale: number
-  zoomScale: number
-  left: number
-  top: number
-  imgW: number
-  imgH: number
-}
-
-export type CropperMode = 'move-box' | 'move-image' | 'fixed'
-export type CropperShape = 'rectangle' | 'circle'
-
-export interface UseCropperOptions {
-  mode: CropperMode
-  shape: CropperShape
-  aspectRatio: number
-  minWidth: number
-  minHeight: number
-  maxWidth: number
-  maxHeight: number
-  initialCropPercent: number
-  enableZoom: boolean
-  minZoom: number
-  maxZoom: number
-  zoomStep: number
-  zoomSpeed: number
-  // Transform options
-  enableRotation?: boolean
-  enableFlip?: boolean
-  rotationStep?: number
-  transformDuration?: number
-}
+export type { CropArea, ImageSize, DisplayGeometry, CropperMode, CropperShape, UseCropperOptions }
 
 export function useCropper(
-  options: UseCropperOptions,
+  options: Ref<UseCropperOptions>,
   zoomScale?: Ref<number>,
   emit?: (event: 'transform-change', payload: TransformChangeEvent) => void
 ) {
@@ -68,7 +24,7 @@ export function useCropper(
 
   // Effective aspect ratio (circle forces 1:1)
   const effectiveAspectRatio = computed(() =>
-    options.shape === 'circle' ? 1 : options.aspectRatio
+    options.value.shape === 'circle' ? 1 : options.value.aspectRatio
   )
 
   // Display geometry (image-to-screen scale) with zoom support
@@ -90,17 +46,17 @@ export function useCropper(
   })
 
   // Initialize transform composable
-  const transformOptions: TransformOptions = {
-    enableRotation: options.enableRotation,
-    enableFlip: options.enableFlip,
-    rotationStep: options.rotationStep,
-    transformDuration: options.transformDuration,
-  }
+  const transformOptions = computed<TransformOptions>(() => ({
+    enableRotation: options.value.enableRotation,
+    enableFlip: options.value.enableFlip,
+    rotationStep: options.value.rotationStep,
+    transformDuration: options.value.transformDuration,
+  }))
 
   const transform = useCropperTransform(
     imgNatural,
     crop,
-    transformOptions,
+    transformOptions.value,
     emit || (() => {})
   )
 
@@ -109,29 +65,29 @@ export function useCropper(
     const ih = imgNatural.value.height
     const ar = effectiveAspectRatio.value || 0
 
-    if (options.mode === 'move-image') {
-      let w = Math.min(iw, ih) * (options.initialCropPercent / 100)
+    if (options.value.mode === 'move-image') {
+      let w = Math.min(iw, ih) * (options.value.initialCropPercent / 100)
       let h = ar ? w / ar : w
       if (h > ih) { h = ih; w = ar ? h * ar : h }
       if (w > iw) { w = iw; h = ar ? w / ar : h }
-      if (w > options.maxWidth) { w = options.maxWidth; h = ar ? w / ar : w }
-      if (h > options.maxHeight) { h = options.maxHeight; w = ar ? h * ar : h }
+      if (w > options.value.maxWidth) { w = options.value.maxWidth; h = ar ? w / ar : w }
+      if (h > options.value.maxHeight) { h = options.value.maxHeight; w = ar ? h * ar : h }
       moveImageCropSize.value = { width: w, height: h }
       imagePan.value = { x: (iw - w) / 2, y: (ih - h) / 2 }
     }
     else {
-      let w = Math.min(iw, ih) * (options.initialCropPercent / 100)
+      let w = Math.min(iw, ih) * (options.value.initialCropPercent / 100)
       let h = ar ? w / ar : w
       if (h > ih) { h = ih; w = ar ? h * ar : h }
       if (w > iw) { w = iw; h = ar ? w / ar : h }
-      if (w > options.maxWidth) { w = options.maxWidth; h = ar ? w / ar : w }
-      if (h > options.maxHeight) { h = options.maxHeight; w = ar ? h * ar : h }
+      if (w > options.value.maxWidth) { w = options.value.maxWidth; h = ar ? w / ar : w }
+      if (h > options.value.maxHeight) { h = options.value.maxHeight; w = ar ? h * ar : h }
       crop.value = { x: (iw - w) / 2, y: (ih - h) / 2, width: w, height: h }
     }
   }
 
   const getCurrentCoordinates = (): CropArea => {
-    if (options.mode === 'move-image') {
+    if (options.value.mode === 'move-image') {
       return {
         x: imagePan.value.x,
         y: imagePan.value.y,

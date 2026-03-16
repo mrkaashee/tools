@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import type { ImageEditorContext, AnnotationData, TextAnnotation } from '../types/editor'
 import ImgHandler from './ImgHandler.vue'
 
@@ -181,11 +181,11 @@ onUnmounted(() => {
 
       <div class="flex gap-2">
         <UButton
-          label="Clear"
+          label="Cancel"
           color="neutral"
           variant="ghost"
           class="flex-1"
-          @click="clearAll" />
+          @click="imgEditor?.cancelTool()" />
         <UButton
           label="Done"
           color="primary"

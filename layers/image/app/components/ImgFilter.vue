@@ -1,4 +1,4 @@
-﻿<script lang="ts" setup>
+<script lang="ts" setup>
 import type { ImageEditorContext, FilterOptions } from '../types/editor'
 
 const imgEditor = inject<ImageEditorContext>('imgEditor')
@@ -180,7 +180,7 @@ const resetFilters = async () => {
   // so reloading it discards any baked preview pixels without touching history.
   const lastCommitted = imgEditor?.imageState.value.current
   if (lastCommitted && imgEditor) {
-    await imgEditor.loadImage(lastCommitted)
+    await imgEditor.loadImage(lastCommitted, true, true)
   }
 }
 

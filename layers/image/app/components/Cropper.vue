@@ -1,4 +1,4 @@
-﻿<!-- eslint-disable vue/multi-word-component-names -->
+<!-- eslint-disable vue/multi-word-component-names -->
 <script lang="ts" setup>
 import { useResizeObserver, useEventListener } from '@vueuse/core'
 import type { CropperProps, CropperEmits } from '../types/cropper'
@@ -23,6 +23,22 @@ const props = withDefaults(defineProps<CropperProps>(), {
 })
 
 const emit = defineEmits<CropperEmits>()
+
+const cropperOptions = computed<UseCropperOptions>(() => ({
+  mode: props.mode,
+  shape: props.shape,
+  aspectRatio: props.aspectRatio,
+  minWidth: props.minWidth,
+  minHeight: props.minHeight,
+  maxWidth: props.maxWidth,
+  maxHeight: props.maxHeight,
+  initialCropPercent: props.initialCropPercent,
+  enableZoom: props.enableZoom,
+  minZoom: props.minZoom,
+  maxZoom: props.maxZoom,
+  zoomStep: props.zoomStep,
+  zoomSpeed: props.zoomSpeed,
+}))
 
 // ─── DOM refs ─────────────────────────────────────────────────────────────────
 const containerRef = ref<HTMLElement | null>(null)
@@ -54,21 +70,7 @@ const {
   resetTransforms,
   getTransformState,
 } = useCropper(
-  {
-    mode: props.mode,
-    shape: props.shape,
-    aspectRatio: props.aspectRatio,
-    minWidth: props.minWidth,
-    minHeight: props.minHeight,
-    maxWidth: props.maxWidth,
-    maxHeight: props.maxHeight,
-    initialCropPercent: props.initialCropPercent,
-    enableZoom: props.enableZoom,
-    minZoom: props.minZoom,
-    maxZoom: props.maxZoom,
-    zoomStep: props.zoomStep,
-    zoomSpeed: props.zoomSpeed,
-  },
+  cropperOptions,
   props.enableZoom ? zoomLevel : undefined,
   emit
 )
@@ -98,12 +100,29 @@ const { imageStyle, stencilStyle, stencilImageStyle } = useCropperStyles(
   display,
   props.mode,
   transformState,
-  300 // transformDuration
+  300, // transformDuration
+  isInteracting
 )
 
 const notifyChange = () => {
   emit('change', getCurrentCoordinates())
 }
+
+// Watch for aspect ratio changes from parent
+watch(() => props.aspectRatio, () => {
+  // Update the internal effective aspect ratio in useCropper
+  // Even though it's a computed in useCropper, it depends on the reactive options ref.
+  // We need to re-initialize the crop to apply the new ratio visually.
+  if (imageLoaded.value) {
+    isInteracting.value = true
+    initializeCrop()
+    notifyChange()
+    // Reset after a short delay to ensure transitions are suppressed for the jump
+    setTimeout(() => {
+      isInteracting.value = false
+    }, 50)
+  }
+})
 
 // ─── Interaction ──────────────────────────────────────────────────────────────
 const { startInteraction, circleCursor, updateCircleCursor } = useCropperInteraction(

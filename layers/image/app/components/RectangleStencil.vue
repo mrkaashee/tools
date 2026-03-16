@@ -1,6 +1,7 @@
-﻿<script setup lang="ts">
-import { inject, ref, computed, watch } from 'vue'
+<script setup lang="ts">
+import { inject, ref, computed, watch, onUnmounted } from 'vue'
 import type { ImageEditorContext } from '../types/editor'
+import type { CropArea as Rect } from '../types/cropper'
 import ImgHandler from './ImgHandler.vue'
 import { useInteraction } from '../composables/useInteraction'
 import { calculateMove, calculateResize } from '../utils/interaction'

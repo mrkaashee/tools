@@ -61,6 +61,7 @@ const statusConfig = {
             :icon="tool.icon"
             :title="tool.label"
             :description="tool.description"
+            :to="tool.to"
             variant="subtle">
             <template #footer>
               <div class="flex items-center gap-2">

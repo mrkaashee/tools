@@ -1,4 +1,5 @@
-﻿import { ref, type Ref } from 'vue'
+import { ref, type Ref } from 'vue'
+import { useInteraction } from './useInteraction'
 import { calculateMove, calculateResize, type Rect } from '../utils/interaction'
 
 export function useCensor(zoomLevel: Ref<number> = ref(1)) {
@@ -13,6 +14,7 @@ export function useCensor(zoomLevel: Ref<number> = ref(1)) {
   const initializeSelection = (imageWidth: number, imageHeight: number) => {
     const w = imageWidth * 0.4
     const h = imageHeight * 0.4
+    console.log('useCensor: Initializing selection', { imageWidth, imageHeight, w, h })
     selection.value = {
       x: (imageWidth - w) / 2,
       y: (imageHeight - h) / 2,
@@ -47,6 +49,15 @@ export function useCensor(zoomLevel: Ref<number> = ref(1)) {
     kind.value = k
     handle.value = h || null
     startInteraction(e, k, { ...selection.value })
+  }
+
+  /** Start a new selection from a specific point (e.g. clicking on canvas) */
+  const startNewSelection = (e: MouseEvent | TouchEvent, x: number, y: number) => {
+    console.log('useCensor: startNewSelection', { x, y })
+    selection.value = { x, y, width: 1, height: 1 }
+    kind.value = 'resize'
+    handle.value = 'br'
+    startInteraction(e, 'resize', { ...selection.value })
   }
 
   const getCensoredCanvas = (sourceCanvas: HTMLCanvasElement): HTMLCanvasElement | null => {
@@ -110,6 +121,7 @@ export function useCensor(zoomLevel: Ref<number> = ref(1)) {
     // Actions
     initializeSelection,
     initiateInteraction,
+    startNewSelection,
     getCensoredCanvas
   }
 }

@@ -6,6 +6,7 @@ export interface Tool {
   description: string
   status: ToolStatus
   category: { icon: string, label: string }
+  to?: string
 }
 
 export const useToolsList = () => {
@@ -156,43 +157,49 @@ export const useToolsList = () => {
       icon: 'i-lucide-crop',
       label: 'Image Cropper',
       description: 'Crop images to any aspect ratio with precision.',
-      status: 'proposed',
+      status: 'active',
       category: { icon: 'i-lucide-image', label: 'Image' },
+      to: '/image/cropper',
     },
     {
       icon: 'i-lucide-scaling',
       label: 'Image Resizer',
       description: 'Change image dimensions while maintaining quality.',
-      status: 'proposed',
+      status: 'active',
       category: { icon: 'i-lucide-image', label: 'Image' },
+      to: '/image/resizer',
     },
     {
       icon: 'i-lucide-refresh-ccw',
       label: 'Image Converter',
       description: 'Convert between PNG, JPG, WebP, and other formats.',
-      status: 'proposed',
+      status: 'active',
       category: { icon: 'i-lucide-image', label: 'Image' },
+      to: '/image/converter',
     },
     {
       icon: 'i-lucide-shrink',
       label: 'Image Compressor',
       description: 'Optimize and compress images for faster web loading.',
-      status: 'proposed',
+      status: 'active',
       category: { icon: 'i-lucide-image', label: 'Image' },
+      to: '/image/compressor',
     },
     {
       icon: 'i-lucide-file-image',
       label: 'SVG to PNG Converter',
       description: 'Quickly convert SVG vector files to PNG images.',
-      status: 'proposed',
+      status: 'active',
       category: { icon: 'i-lucide-image', label: 'Image' },
+      to: '/image/svg-converter',
     },
     {
       icon: 'i-lucide-rotate-cw',
       label: 'Image Rotate & Flip',
       description: 'Rotate images by any angle and flip horizontally or vertically.',
-      status: 'proposed',
+      status: 'active',
       category: { icon: 'i-lucide-image', label: 'Image' },
+      to: '/image/rotate-flip',
     },
     {
       icon: 'i-lucide-stamp',
@@ -237,11 +244,28 @@ export const useToolsList = () => {
       category: { icon: 'i-lucide-image', label: 'Image' },
     },
     {
+      icon: 'i-lucide-pencil-line',
+      label: 'Photo Markup & Annotation',
+      description: 'Add arrows, shapes, and text to your images with professional precision.',
+      status: 'active',
+      category: { icon: 'i-lucide-image', label: 'Image' },
+      to: '/image/annotation',
+    },
+    {
+      icon: 'i-lucide-shield-alert',
+      label: 'Privacy Blur & Pixelate',
+      description: 'Quickly blur or pixelate sensitive information in your photos.',
+      status: 'active',
+      category: { icon: 'i-lucide-image', label: 'Image' },
+      to: '/image/blur',
+    },
+    {
       icon: 'i-lucide-sparkles',
       label: 'Photo Filters',
       description: 'Apply grayscale, sepia, blur, brightness, and other CSS filters to images.',
-      status: 'proposed',
+      status: 'active',
       category: { icon: 'i-lucide-image', label: 'Image' },
+      to: '/image/filters',
     },
     // Security / Crypto
     {

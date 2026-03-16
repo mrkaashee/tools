@@ -1,4 +1,5 @@
-﻿import { ref, computed, type Ref } from 'vue'
+import { ref, computed, type Ref } from 'vue'
+import { useInteraction } from './useInteraction'
 import type { AnnotationData, RectAnnotation, CircleAnnotation, ArrowAnnotation, TextAnnotation } from '../types/editor'
 import { calculateMove, calculateResize } from '../utils/interaction'
 

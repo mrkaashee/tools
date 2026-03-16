@@ -1,4 +1,4 @@
-﻿<script lang="ts" setup>
+<script lang="ts" setup>
 import type { ImageEditorContext, TransformState } from '../types/editor'
 
 const imgEditor = inject<ImageEditorContext>('imgEditor')
@@ -13,7 +13,7 @@ const applyTransform = (angle = 0, h = false, v = false) => {
   const canvas = imgEditor?.getCanvas()
   if (!canvas) return
 
-  const needsDimensionSwap = angle === 90 || angle === 270
+  const needsDimensionSwap = Math.abs(angle) % 180 === 90
   const width = needsDimensionSwap ? canvas.height : canvas.width
   const height = needsDimensionSwap ? canvas.width : canvas.height
 
@@ -40,6 +40,7 @@ const applyTransform = (angle = 0, h = false, v = false) => {
   // Optimization: Pass the canvas directly instead of generating
   // a blocking data URL on the main thread
   imgEditor?.commit(tempCanvas, 'transform')
+  imgEditor?.resetZoom()
 }
 
 const rotate = (angle: number) => {

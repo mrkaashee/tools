@@ -1,4 +1,4 @@
-﻿<script lang="ts" setup>
+<script lang="ts" setup>
 import { useResizeObserver, useEventListener, useElementSize, useManualRefHistory, useObjectUrl } from '@vueuse/core'
 import type { Layer, ImageState, ChangeEvent, CropArea } from '../types/editor'
 
@@ -15,6 +15,10 @@ const props = defineProps<{
   minZoom?: number
   /** If true, removes the default border and rounding from the editor container. */
   borderless?: boolean
+  /** Hides the checkerboard background behind the image. */
+  hideCheckerboard?: boolean
+  /** Completely disables image panning. */
+  disablePanning?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -219,7 +223,7 @@ watch(minZoom, newMin => {
 })
 
 // Load image
-const loadImage = async (src: string) => {
+const loadImage = async (src: string, skipCommit = false, skipFit = false) => {
   if (typeof window === 'undefined') return Promise.resolve()
   isLoading.value = true
 
@@ -254,11 +258,13 @@ const loadImage = async (src: string) => {
       isLoading.value = false
 
       await nextTick()
-      fitToScreen()
-      requestAnimationFrame(fitToScreen)
+      if (!skipFit) {
+        fitToScreen()
+        requestAnimationFrame(fitToScreen)
+      }
 
       // Capture state for undo/redo
-      commitToHistory()
+      if (!skipCommit) commitToHistory()
       emit('load', imageState.value)
       resolve()
     }
@@ -337,13 +343,13 @@ const triggerFileInput = () => {
 const handleUndo = async () => {
   if (!canUndo.value) return
   undo()
-  if (imageState.value.current) await loadImage(imageState.value.current)
+  if (imageState.value.current) await loadImage(imageState.value.current, true, true)
 }
 
 const handleRedo = async () => {
   if (!canRedo.value) return
   redo()
-  if (imageState.value.current) await loadImage(imageState.value.current)
+  if (imageState.value.current) await loadImage(imageState.value.current, true, true)
 }
 
 const resetAll = async () => {
@@ -368,9 +374,15 @@ const activateTool = (tool: string) => { activeTool.value = tool }
 const runApplyHooks = async () => {
   // Capture current hooks and clear the list to prevent re-entrancy loops
   const hooks = [...applyHooks.value]
+  applyHooks.value = []
   for (const hook of hooks) {
     await hook()
   }
+}
+
+const cancelTool = () => {
+  applyHooks.value = []
+  activeTool.value = null
 }
 
 const deactivateTool = async () => {
@@ -531,7 +543,7 @@ const fitToScreen = () => {
 
 // Pan Gestures
 const onDragStart = (e: MouseEvent | TouchEvent) => {
-  if (!hasImage.value) return
+  if (!hasImage.value || props.disablePanning) return
   initialPanX.value = panX.value
   initialPanY.value = panY.value
   startInteraction(e, 'pan', {})
@@ -767,6 +779,7 @@ const editorAPI = {
   updateCanvas,
   activateTool,
   deactivateTool,
+  cancelTool,
   getCanvas,
   getImageState,
   commit,
@@ -885,12 +898,15 @@ defineExpose({
         ref="viewportRef"
         class="flex-1 overflow-hidden relative will-change-scroll"
         :class="{
-          'flex items-center justify-center bg-inverted': !props.fixedStencil,
+          'flex items-center justify-center': !props.fixedStencil,
+          'bg-inverted': !props.fixedStencil && !props.hideCheckerboard,
+          'bg-default': !props.fixedStencil && props.hideCheckerboard,
           'bg-black/95': props.fixedStencil,
-          'cursor-grab': hasImage,
-          'cursor-grabbing': isDragging,
+          'cursor-grab': hasImage && !props.disablePanning,
+          'cursor-grabbing': isDragging && !props.disablePanning,
+          'cursor-default': hasImage && props.disablePanning,
         }"
-        :style="!props.fixedStencil ? {
+        :style="(!props.fixedStencil && !props.hideCheckerboard) ? {
           backgroundImage: 'linear-gradient(45deg, #151515 25%, transparent 25%), linear-gradient(-45deg, #151515 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #151515 75%), linear-gradient(-45deg, transparent 75%, #151515 75%)',
           backgroundSize: '20px 20px',
           backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',

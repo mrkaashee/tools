@@ -1,4 +1,6 @@
+import { ref, type Ref } from 'vue'
 import { useEventListener } from '@vueuse/core'
+import { getEventPoint } from '../utils/interaction'
 
 export interface InteractionState<T> {
   isInteracting: Ref<boolean>

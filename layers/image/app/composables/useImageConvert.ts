@@ -1,4 +1,5 @@
-﻿import { ref, watch } from 'vue'
+import { ref, watch } from 'vue'
+import { useObjectUrl } from '@vueuse/core'
 
 import type { ImageFormat } from '../types/editor'
 
@@ -32,6 +33,7 @@ export function useImageConvert() {
   const quality = ref(92)
   const originalFormat = ref('')
   const convertedBlob = ref<Blob | null>(null)
+  const convertedImageUrl = useObjectUrl(convertedBlob)
   const isConverting = ref(false)
 
   const convert = async () => {
@@ -88,6 +90,7 @@ export function useImageConvert() {
     quality,
     originalFormat,
     convertedBlob,
+    convertedImageUrl,
     isConverting,
     convert,
     setSource,
