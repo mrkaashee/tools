@@ -235,10 +235,10 @@ defineExpose({
 
           <!-- High-Visibility Handles (Only for active selection) -->
           <template v-if="activeSelectionId === sel.id">
-            <ImgHandler position="tl" :active="isInteracting" :style="{ transform: `scale(${counterScale * 2.5})` }" @mousedown.stop.prevent="state.initiateInteraction($event, sel.id, 'resize', 'tl')" />
-            <ImgHandler position="tr" :active="isInteracting" :style="{ transform: `scale(${counterScale * 2.5})` }" @mousedown.stop.prevent="state.initiateInteraction($event, sel.id, 'resize', 'tr')" />
-            <ImgHandler position="bl" :active="isInteracting" :style="{ transform: `scale(${counterScale * 2.5})` }" @mousedown.stop.prevent="state.initiateInteraction($event, sel.id, 'resize', 'bl')" />
-            <ImgHandler position="br" :active="isInteracting" :style="{ transform: `scale(${counterScale * 2.5})` }" @mousedown.stop.prevent="state.initiateInteraction($event, sel.id, 'resize', 'br')" />
+            <ImgHandler position="tl" :active="isInteracting" :style="{ transform: `scale(${counterScale * 0.6})` }" @mousedown.stop.prevent="state.initiateInteraction($event, sel.id, 'resize', 'tl')" />
+            <ImgHandler position="tr" :active="isInteracting" :style="{ transform: `scale(${counterScale * 0.6})` }" @mousedown.stop.prevent="state.initiateInteraction($event, sel.id, 'resize', 'tr')" />
+            <ImgHandler position="bl" :active="isInteracting" :style="{ transform: `scale(${counterScale * 0.6})` }" @mousedown.stop.prevent="state.initiateInteraction($event, sel.id, 'resize', 'bl')" />
+            <ImgHandler position="br" :active="isInteracting" :style="{ transform: `scale(${counterScale * 0.6})` }" @mousedown.stop.prevent="state.initiateInteraction($event, sel.id, 'resize', 'br')" />
           </template>
         </div>
       </template>
