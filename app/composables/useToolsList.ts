@@ -159,7 +159,7 @@ export const useToolsList = () => {
       description: 'Advanced all-in-one image editor with layers, filters, and more.',
       status: 'active',
       category: { icon: 'i-lucide-image', label: 'Image' },
-      to: '/image-studio',
+      to: '/image',
     },
     {
       icon: 'i-lucide-crop',
