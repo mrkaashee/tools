@@ -223,3 +223,8 @@ export interface StudioHandlerProps {
   /** Additional CSS class to apply to each handler */
   class?: string
 }
+
+export interface StudioHistoryProps {
+  /** Maximum number of undo steps to keep in memory. Default: 50 */
+  max?: number
+}

@@ -4,11 +4,12 @@ import { useResizeObserver, useEventListener, useElementSize, useManualRefHistor
 import { useInteraction } from '../composables/useInteraction'
 import { useWorkerProcessor } from '../composables/useWorkerProcessor'
 import { PRESET_FILTERS } from '../composables/useImageProcessor'
-import type { Layer, ImageState, ChangeEvent, CropArea, StudioCanvasProps, StudioStencilProps, StudioDragProps, StudioZoomProps, StudioToolbarProps, StudioUploaderProps, StudioFloatingBarProps, StudioHandlerProps } from '../types/editor'
+import type { Layer, ImageState, ChangeEvent, CropArea, StudioCanvasProps, StudioStencilProps, StudioDragProps, StudioZoomProps, StudioToolbarProps, StudioUploaderProps, StudioFloatingBarProps, StudioHandlerProps, StudioHistoryProps } from '../types/editor'
 
 const props = defineProps<{
   src?: string | null
-  maxHistory?: number
+  /** History config: true for defaults, or { max: N } to cap undo stack size */
+  history?: boolean | StudioHistoryProps
   // ─── Structured Object Props (New API) ───────────────────────────
   /** Canvas viewport config: hide, board, border, class, style */
   canvas?: boolean | StudioCanvasProps
@@ -63,6 +64,7 @@ const zoomCfg = computed(() => resolve<StudioZoomProps>(props.zoom))
 const toolbarCfg = computed(() => resolve<StudioToolbarProps>(props.toolbar))
 const uploaderCfg = computed(() => resolve<StudioUploaderProps>(props.uploader))
 const floatingBarCfg = computed(() => resolve<StudioFloatingBarProps>(props.floatingBar))
+const historyCfg = computed(() => resolve<StudioHistoryProps>(props.history))
 
 // ─── Backwards-compatible computed shorthands  ─────────────────────
 // Derive the logical flags used internally from the new props.
@@ -108,7 +110,7 @@ const imageState = ref<ImageState>({
 
 // History management (Professional)
 const { history: _history, undo, redo, canUndo, canRedo, commit: commitToHistory, clear } = useManualRefHistory(imageState, {
-  capacity: props.maxHistory || 50,
+  capacity: historyCfg.value?.max ?? 50,
   clone: true,
 })
 
