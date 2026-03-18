@@ -164,3 +164,49 @@ export interface ImgHandlerProps {
 export interface ImgActionButtonsProps {
   filename?: string
 }
+
+// Structured Prop Types for ImgStudio/ImgEditor
+export interface StudioCanvasProps {
+  hide?: boolean
+  board?: boolean | Record<string, unknown>
+  border?: boolean | Record<string, unknown>
+  class?: string
+  style?: string | Record<string, string>
+}
+
+export interface StudioStencilProps {
+  type?: 'rect' | 'circle' | 'none'
+  fixed?: boolean
+  aspectRatio?: number
+  movable?: boolean
+  resizable?: boolean
+}
+
+export interface StudioDragProps {
+  disable?: boolean
+  restrict?: boolean
+}
+
+export interface StudioZoomProps {
+  min?: number
+  max?: number
+}
+
+export interface StudioToolbarProps {
+  hide?: boolean
+  position?: 'left' | 'right' | 'top' | 'bottom'
+  class?: string
+}
+
+export interface StudioUploaderProps {
+  hide?: boolean
+  hideIfHasImage?: boolean
+  variant?: 'area' | 'button'
+  label?: string
+}
+
+export interface StudioFloatingBarProps {
+  hide?: boolean
+  position?: 'top' | 'bottom'
+  actions?: ('zoom' | 'history' | 'reset' | 'fit')[]
+}

@@ -4,26 +4,27 @@ import { useResizeObserver, useEventListener, useElementSize, useManualRefHistor
 import { useInteraction } from '../composables/useInteraction'
 import { useWorkerProcessor } from '../composables/useWorkerProcessor'
 import { PRESET_FILTERS } from '../composables/useImageProcessor'
-import type { Layer, ImageState, ChangeEvent, CropArea } from '../types/editor'
+import type { Layer, ImageState, ChangeEvent, CropArea, StudioCanvasProps, StudioStencilProps, StudioDragProps, StudioZoomProps, StudioToolbarProps, StudioUploaderProps, StudioFloatingBarProps } from '../types/editor'
 
 const props = defineProps<{
   src?: string | null
   maxHistory?: number
-  /** Show only the upload area — no canvas or toolbar. Useful for initial upload screens. */
-  uploaderOnly?: boolean
-  /** Fixed Stencil mode (WhatsApp/Insta style) — panning an image behind a fixed fixedOverlayRef */
-  fixedStencil?: boolean
-  /** Constrains the image panning so it cannot leave the editor viewport entirely. Also binds to edges if zoomed in. */
-  restrictToBounds?: boolean
-  /** Absolute minimum zoom floor. If not provided, it's calculated based on stencil/viewport cover. */
-  minZoom?: number
-  /** If true, removes the default border and rounding from the editor container. */
-  borderless?: boolean
-  /** Hides the checkerboard background behind the image. */
-  hideCheckerboard?: boolean
-  /** Completely disables image panning. */
-  disablePanning?: boolean
-  // Studio Tools (New Prop-Based API)
+  // ─── Structured Object Props (New API) ───────────────────────────
+  /** Canvas viewport config: hide, board, border, class, style */
+  canvas?: boolean | StudioCanvasProps
+  /** Stencil/crop overlay config: type, fixed, aspectRatio, movable, resizable */
+  stencil?: boolean | StudioStencilProps
+  /** Drag / panning config: disable, restrict */
+  drag?: boolean | StudioDragProps
+  /** Zoom limits: min, max */
+  zoom?: boolean | StudioZoomProps
+  /** Toolbar/sidebar config: hide, position, class */
+  toolbar?: boolean | StudioToolbarProps
+  /** Upload area config: hide, hideIfHasImage, variant, label */
+  uploader?: boolean | StudioUploaderProps
+  /** Floating quick-action bar: hide, position, actions */
+  floatingBar?: boolean | StudioFloatingBarProps
+  // ─── Studio Tools (Prop-Based API) ───────────────────────────────
   censor?: boolean | Record<string, unknown>
   cropper?: boolean | Record<string, unknown>
   annotate?: boolean | Record<string, unknown>
@@ -33,13 +34,64 @@ const props = defineProps<{
   transform?: boolean | Record<string, unknown>
   resize?: boolean | Record<string, unknown>
   filter?: boolean | Record<string, unknown>
+  // ─── v-model ─────────────────────────────────────────────────────
+  activeTool?: string | null
 }>()
 
 const emit = defineEmits<{
   (e: 'load', payload: ImageState): void
   (e: 'change', payload: ChangeEvent): void
   (e: 'export', payload: Blob): void
+  (e: 'update:activeTool', tool: string | null): void
 }>()
+
+// ─── Resolved prop accessors ───────────────────────────────────────
+// Each prop can be a boolean shorthand (true = enabled with defaults) or a config object.
+// Helper: unwrap a boolean|object prop into the config object (or {} if just true)
+function resolve<T extends object>(prop: boolean | T | undefined): T | null {
+  if (prop === undefined || prop === false) return null
+  if (prop === true) return {} as T
+  return prop as T
+}
+
+const canvasCfg = computed(() => resolve<StudioCanvasProps>(props.canvas))
+const stencilCfg = computed(() => resolve<StudioStencilProps>(props.stencil))
+const dragCfg = computed(() => resolve<StudioDragProps>(props.drag))
+const zoomCfg = computed(() => resolve<StudioZoomProps>(props.zoom))
+const toolbarCfg = computed(() => resolve<StudioToolbarProps>(props.toolbar))
+const uploaderCfg = computed(() => resolve<StudioUploaderProps>(props.uploader))
+const floatingBarCfg = computed(() => resolve<StudioFloatingBarProps>(props.floatingBar))
+
+// ─── Backwards-compatible computed shorthands  ─────────────────────
+// Derive the logical flags used internally from the new props.
+const fixedStencil = computed(() => stencilCfg.value?.fixed ?? false)
+const disablePanning = computed(() => dragCfg.value?.disable ?? false)
+const restrictToBounds = computed(() => dragCfg.value?.restrict ?? false)
+// canvas.border defaults to true (has border unless explicitly set to false)
+const hasBorder = computed(() => {
+  const b = canvasCfg.value?.border
+  return b !== false
+})
+// canvas.board (checkerboard) defaults to true
+const hasBoard = computed(() => {
+  const b = canvasCfg.value?.board
+  return b !== false
+})
+// canvas.hide: if canvas prop resolves to null (prop=false/undefined) canvas is visible
+const hideCanvas = computed(() => canvasCfg.value?.hide === true)
+// toolbar
+const toolbarPosition = computed(() => toolbarCfg.value?.position ?? 'right')
+const hideToolbar = computed(() => toolbarCfg.value?.hide === true)
+// uploader
+const uploaderOnly = computed((): boolean => {
+  // Legacy uploaderOnly not present in new API – uploader.hideIfHasImage replaces it with flipped logic
+  // If uploader prop is false/null we never show the standalone uploader
+  if (!uploaderCfg.value) return false
+  return uploaderCfg.value.hideIfHasImage === true
+})
+// floatingBar
+const showFloatingBar = computed(() => floatingBarCfg.value !== null && floatingBarCfg.value?.hide !== true)
+const floatingBarPosition = computed(() => floatingBarCfg.value?.position ?? 'bottom')
 const { isProcessing: isWorkerProcessing, processImage, terminate: terminateWorker } = useWorkerProcessor()
 
 // Core state
@@ -57,8 +109,9 @@ const { history: _history, undo, redo, canUndo, canRedo, commit: commitToHistory
   clone: true,
 })
 
-// Active tool
-const activeTool = ref<string | null>(null)
+// Active tool — internal ref, kept in sync with v-model:activeTool
+const activeTool = ref<string | null>(props.activeTool ?? null)
+watch(() => props.activeTool, val => { if (val !== activeTool.value) activeTool.value = val ?? null })
 
 // Track whether an image is currently loaded
 const hasImage = computed(() => !!imageState.value.current)
@@ -104,17 +157,18 @@ const minZoom = computed(() => {
     }
     // 2. Fixed Stencil Screen Binding (e.g. WhatsApp crop style)
     // The image must always cover the entire viewport.
-    else if (props.fixedStencil && viewportRef.value) {
+    else if (fixedStencil.value && viewportRef.value) {
       const scaleW = vWidth.value / imageState.value.width
       const scaleH = vHeight.value / imageState.value.height
       floor = Math.max(scaleW, scaleH)
     }
   }
 
-  // If a manual minZoom is provided, it's the absolute minimum
-  return props.minZoom !== undefined ? Math.max(floor, props.minZoom) : floor
+  // If a manual minZoom is provided via :zoom="{ min }" prop, it's the absolute minimum
+  const manualMin = zoomCfg.value?.min
+  return manualMin !== undefined ? Math.max(floor, manualMin) : floor
 })
-const maxZoom = ref(10)
+const maxZoom = computed(() => zoomCfg.value?.max ?? 10)
 const panX = ref(0)
 const panY = ref(0)
 const panBounds = ref<{ top: number, left: number, width: number, height: number } | null>(null)
@@ -134,7 +188,7 @@ const clampPanValues = (targetX: number, targetY: number, currentScale: number) 
     boundedY = Math.max(bt + bh - imgH, Math.min(boundedY, bt))
   }
   // 2. Fixed Stencil Screen Binding (e.g. WhatsApp crop style)
-  else if (props.fixedStencil && viewportRef.value) {
+  else if (fixedStencil.value && viewportRef.value) {
     const imgW = imageState.value.width * currentScale
     const imgH = imageState.value.height * currentScale
 
@@ -146,8 +200,8 @@ const clampPanValues = (targetX: number, targetY: number, currentScale: number) 
       ? Math.max(0, Math.min(boundedY, vHeight.value - imgH))
       : Math.max(vHeight.value - imgH, Math.min(boundedY, 0))
   }
-  // 3. Optional Bounding to the Viewport Edges (restrictToBounds prop)
-  else if (props.restrictToBounds && viewportRef.value) {
+  // 3. Optional Bounding to the Viewport Edges (:drag="{ restrict: true }" prop)
+  else if (restrictToBounds.value && viewportRef.value) {
     const imgW = imageState.value.width * currentScale
     const imgH = imageState.value.height * currentScale
 
@@ -329,7 +383,7 @@ const notifyChange = () => {
   // Optimization: If an image is loaded but coordinates are null, it usually means
   // the stencil hasn't calculated its bounds yet (initial mount). We skip this
   // tick to avoid double-emitting with a null state.
-  if (hasImage.value && !coordinates && props.fixedStencil) return
+  if (hasImage.value && !coordinates && fixedStencil.value) return
 
   emit('change', {
     coordinates,
@@ -384,7 +438,10 @@ const resetAll = async () => {
 // canUndo/canRedo are provided by useManualRefHistory
 
 // Tool activation
-const activateTool = (tool: string) => { activeTool.value = tool }
+const activateTool = (tool: string) => {
+  activeTool.value = tool
+  emit('update:activeTool', tool)
+}
 
 /** Runs all registered apply hooks (e.g. committing stencils, annotations) */
 const runApplyHooks = async () => {
@@ -399,11 +456,13 @@ const runApplyHooks = async () => {
 const cancelTool = () => {
   applyHooks.value = []
   activeTool.value = null
+  emit('update:activeTool', null)
 }
 
 const deactivateTool = async () => {
   await runApplyHooks()
   activeTool.value = null
+  emit('update:activeTool', null)
 }
 
 // Zoom controls
@@ -545,12 +604,12 @@ const fitToScreen = () => {
   if (vW === 0 || vH === 0) return
 
   // In fixedStencil mode, we don't need padding for tools/canvas border space
-  const padding = props.fixedStencil ? 0 : 40
+  const padding = fixedStencil.value ? 0 : 40
 
   const scaleW = (vW - padding) / imageState.value.width
   const scaleH = (vH - padding) / imageState.value.height
 
-  if (props.fixedStencil) {
+  if (fixedStencil.value) {
     // In fixedStencil mode, we ALWAYS "cover" the entire viewport.
     // This prevents the constraints from snapping the image to a side.
     const vScale = Math.max(scaleW, scaleH, minZoom.value) + 0.005
@@ -569,7 +628,7 @@ const fitToScreen = () => {
 
 // Pan Gestures
 const onDragStart = (e: MouseEvent | TouchEvent) => {
-  if (!hasImage.value || props.disablePanning) return
+  if (!hasImage.value || disablePanning.value) return
   initialPanX.value = panX.value
   initialPanY.value = panY.value
   startInteraction(e, 'pan', {})
@@ -800,7 +859,7 @@ const editorAPI = {
   panX,
   panY,
   fixedOverlayRef,
-  fixedStencil: computed(() => props.fixedStencil),
+  fixedStencil,
   loadImage,
   updateCanvas,
   activateTool,
@@ -841,7 +900,7 @@ const editorAPI = {
 provide('imgStudio', editorAPI)
 
 watch(panBounds, (newBounds, oldBounds) => {
-  if (newBounds && !oldBounds && props.fixedStencil) {
+  if (newBounds && !oldBounds && fixedStencil.value) {
     // When bounds are first established (e.g. stencil mount), re-fit
     fitToScreen()
   }
@@ -866,7 +925,7 @@ defineExpose({
   panX,
   panY,
   fixedOverlayRef,
-  fixedStencil: computed(() => props.fixedStencil),
+  fixedStencil,
   overlayRef,
   layers: editorLayers,
   canvasPreviewStyle,
@@ -915,12 +974,12 @@ defineExpose({
 
   <!-- Uploader-only mode: no canvas, just upload UI (e.g. upload a profile picture) -->
   <div
-    v-if="props.uploaderOnly && !hasImage"
+    v-if="uploaderOnly && !hasImage"
     class="flex flex-col items-center justify-center w-full h-full min-h-64 bg-inverted rounded-xl border border-inverted/5 p-8">
     <UFileUpload
       variant="area"
       accept="image/*"
-      label="Upload Image"
+      :label="uploaderCfg?.label ?? 'Upload Image'"
       description="Click to select or drag and drop an image here"
       @update:model-value="onFileChange" />
     <slot :editor="editorAPI" />
@@ -931,28 +990,41 @@ defineExpose({
     v-else
     class="flex flex-col w-full h-full bg-elevated overflow-hidden"
     :class="{
-      'border border-default rounded-xl': !props.borderless,
+      'border border-default rounded-xl': hasBorder,
     }">
     <!-- Header Area -->
     <div ref="toolbarTargetRef">
       <slot name="header" :editor="editorAPI" />
     </div>
 
-    <div class="flex-1 flex overflow-hidden relative max-lg:flex-col">
-      <!-- Canvas / Viewport Area -->
+    <!--
+      Main layout: flex direction changes based on toolbar.position.
+      right (default) → row, left → row-reverse, bottom → col-reverse, top → col
+    -->
+    <div
+      class="flex-1 flex overflow-hidden relative"
+      :class="{
+        'flex-row': toolbarPosition === 'right',
+        'flex-row-reverse': toolbarPosition === 'left',
+        'flex-col': toolbarPosition === 'top',
+        'flex-col-reverse': toolbarPosition === 'bottom',
+        'max-lg:flex-col': toolbarPosition === 'right' || toolbarPosition === 'left',
+      }">
+      <!-- Canvas / Viewport Area (hidden if canvas.hide = true) -->
       <div
+        v-show="!hideCanvas"
         ref="viewportRef"
         class="flex-1 overflow-hidden relative will-change-scroll"
         :class="{
-          'flex items-center justify-center': !props.fixedStencil,
-          'bg-inverted': !props.fixedStencil && !props.hideCheckerboard,
-          'bg-default': !props.fixedStencil && props.hideCheckerboard,
-          'bg-black/95': props.fixedStencil,
-          'cursor-grab': hasImage && !props.disablePanning,
-          'cursor-grabbing': isDragging && !props.disablePanning,
-          'cursor-default': hasImage && props.disablePanning,
+          'flex items-center justify-center': !fixedStencil,
+          'bg-inverted': !fixedStencil && hasBoard,
+          'bg-default': !fixedStencil && !hasBoard,
+          'bg-black/95': fixedStencil,
+          'cursor-grab': hasImage && !disablePanning,
+          'cursor-grabbing': isDragging && !disablePanning,
+          'cursor-default': hasImage && disablePanning,
         }"
-        :style="(!props.fixedStencil && !props.hideCheckerboard) ? {
+        :style="(!fixedStencil && hasBoard) ? {
           backgroundImage: 'linear-gradient(45deg, #151515 25%, transparent 25%), linear-gradient(-45deg, #151515 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #151515 75%), linear-gradient(-45deg, transparent 75%, #151515 75%)',
           backgroundSize: '20px 20px',
           backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
@@ -961,38 +1033,50 @@ defineExpose({
         @touchstart="onDragStart">
         <!-- Fixed Stencil Overlay (Target for Stencils that stay static in center) -->
         <div
-          v-if="props.fixedStencil"
+          v-if="fixedStencil"
           ref="fixedOverlayRef"
           class="absolute inset-0 z-30 pointer-events-none w-full h-full" />
-        <!-- Empty state: using Nuxt UI UFileUpload with area variant -->
+
+        <!-- Empty state: Upload dropzone -->
         <div
-          v-if="!canvasVisible && !isLoading"
+          v-if="!canvasVisible && !isLoading && !uploaderCfg?.hide"
           class="absolute inset-0 flex flex-col items-center justify-center z-10 p-12">
-          <UFileUpload
-            variant="area"
-            accept="image/*"
-            size="lg"
-            label="Get Started"
-            description="Drag and drop or click to upload your image"
-            @update:model-value="onFileChange" />
+          <!-- Premium upload area -->
+          <div class="w-full max-w-md flex flex-col items-center gap-6">
+            <div class="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center ring-1 ring-primary/20">
+              <UIcon name="i-lucide-image-plus" class="w-8 h-8 text-primary" />
+            </div>
+            <div class="text-center space-y-1">
+              <p class="text-sm font-semibold text-highlighted">
+                {{ uploaderCfg?.label ?? 'Get Started' }}
+              </p>
+              <p class="text-xs text-muted">
+                Drag &amp; drop or click to upload an image
+              </p>
+            </div>
+            <UFileUpload
+              variant="area"
+              accept="image/*"
+              size="lg"
+              class="w-full"
+              @update:model-value="onFileChange" />
+          </div>
         </div>
 
         <!-- Canvas wrapper:
              fixedStencil — absolute at top-left, single combined translate+scale transform.
-                         translate(panX, panY) puts the top-left corner at the correct pan position;
-                         scale(zoom) then grows/shrinks the image from that origin.
              normal   — flex m-auto centering with translate+scale; zoom controlled by outer fitToScreen -->
         <div
           class="will-change-transform shrink-0"
           :class="{
             'opacity-0 pointer-events-none': !canvasVisible,
-            'absolute top-0 left-0': props.fixedStencil,
-            'relative': !props.fixedStencil,
+            'absolute top-0 left-0': fixedStencil,
+            'relative': !fixedStencil,
           }"
           :style="{
             width: imageState.width + 'px',
             height: imageState.height + 'px',
-            transformOrigin: props.fixedStencil ? '0 0' : 'center center',
+            transformOrigin: fixedStencil ? '0 0' : 'center center',
             transform: `translate3d(${panX}px, ${panY}px, 0) scale(${zoomLevel})`,
           }">
           <canvas
@@ -1004,19 +1088,93 @@ defineExpose({
             <slot :editor="editorAPI" name="overlay" />
           </div>
         </div>
+
+        <!-- Floating Quick-Action Bar -->
+        <Transition
+          enter-active-class="transition-all duration-300 ease-out"
+          enter-from-class="opacity-0 translate-y-2"
+          leave-active-class="transition-all duration-200 ease-in"
+          leave-to-class="opacity-0 translate-y-2">
+          <div
+            v-if="showFloatingBar && hasImage"
+            class="absolute z-40 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-1.5 rounded-xl bg-inverted/80 backdrop-blur-md border border-default/20 shadow-xl"
+            :class="floatingBarPosition === 'top' ? 'top-4' : 'bottom-4'">
+            <UTooltip text="Zoom Out">
+              <UButton
+                icon="i-lucide-zoom-out"
+                size="xs"
+                color="neutral"
+                variant="ghost"
+                :disabled="zoomLevel <= minZoom"
+                @click="zoomOut" />
+            </UTooltip>
+            <span class="text-[10px] font-mono text-muted min-w-10 text-center tabular-nums">
+              {{ Math.round(zoomLevel * 100) }}%
+            </span>
+            <UTooltip text="Zoom In">
+              <UButton
+                icon="i-lucide-zoom-in"
+                size="xs"
+                color="neutral"
+                variant="ghost"
+                :disabled="zoomLevel >= maxZoom"
+                @click="zoomIn" />
+            </UTooltip>
+            <div class="w-px h-4 bg-inverted/20 mx-1" />
+            <UTooltip text="Fit to screen (0)">
+              <UButton icon="i-lucide-maximize-2" size="xs" color="neutral" variant="ghost" @click="resetZoom" />
+            </UTooltip>
+            <div class="w-px h-4 bg-inverted/20 mx-1" />
+            <UTooltip text="Undo (Ctrl+Z)">
+              <UButton
+                icon="i-lucide-undo-2"
+                size="xs"
+                color="neutral"
+                variant="ghost"
+                :disabled="!canUndo"
+                @click="undo" />
+            </UTooltip>
+            <UTooltip text="Redo (Ctrl+Y)">
+              <UButton
+                icon="i-lucide-redo-2"
+                size="xs"
+                color="neutral"
+                variant="ghost"
+                :disabled="!canRedo"
+                @click="redo" />
+            </UTooltip>
+            <div class="w-px h-4 bg-inverted/20 mx-1" />
+            <UTooltip text="Reset All">
+              <UButton
+                icon="i-lucide-rotate-ccw"
+                size="xs"
+                color="error"
+                variant="ghost"
+                :disabled="!canUndo"
+                @click="resetAll" />
+            </UTooltip>
+          </div>
+        </Transition>
       </div>
+
       <!-- Ghost Slot: Always render the default slot in a hidden container
            whenever the primary slot container (the sidebar) is hidden.
            Using visibility: hidden instead of display: none ensures that
            children (like stencils) get correct layout dimensions for math. -->
-      <div v-if="props.fixedStencil || !hasImage" class="invisible absolute -z-10 pointer-events-none">
+      <div v-if="fixedStencil || !hasImage" class="invisible absolute -z-10 pointer-events-none">
         <slot :editor="editorAPI" />
       </div>
 
-      <!-- Tools Sidebar — only in normal (non-fixedStencil) editor -->
+      <!-- Tools Sidebar — only in normal (non-fixedStencil) editor, hidden if toolbar.hide = true -->
       <aside
-        v-else-if="hasImage"
-        class="w-80 bg-elevated/80 backdrop-blur-md border-l border-muted flex flex-col z-10 transition-all duration-300 ease-in-out max-lg:w-full max-lg:h-87.5 max-lg:border-l-0 max-lg:border-t">
+        v-if="!fixedStencil && hasImage && !hideToolbar"
+        class="bg-elevated/80 backdrop-blur-md flex flex-col z-10 transition-all duration-300 ease-in-out"
+        :class="{
+          'w-80 border-l border-muted max-lg:w-full max-lg:h-87.5 max-lg:border-l-0 max-lg:border-t': toolbarPosition === 'right',
+          'w-80 border-r border-muted max-lg:w-full max-lg:h-87.5 max-lg:border-r-0 max-lg:border-b': toolbarPosition === 'left',
+          'w-full border-t border-muted h-64': toolbarPosition === 'bottom',
+          'w-full border-b border-muted h-64': toolbarPosition === 'top',
+        }">
         <div class="flex-1 overflow-y-auto p-6 flex flex-col gap-6 scrollbar-thin scrollbar-thumb-accented scrollbar-track-transparent">
           <!-- Prop-Based Tools -->
           <TransitionGroup
@@ -1045,7 +1203,7 @@ defineExpose({
             <div v-if="props.cropper" key="cropper" class="space-y-4">
               <div class="flex items-center justify-between px-1">
                 <h3 class="text-[10px] font-bold uppercase tracking-widest text-muted">
-                  Crop & Aspect
+                  Crop &amp; Aspect
                 </h3>
                 <UBadge v-if="['stencil-rect', 'stencil-circle'].includes(activeTool || '')" color="primary" size="xs" variant="subtle" class="animate-pulse">
                   Active
@@ -1114,7 +1272,7 @@ defineExpose({
               <div class="space-y-4 pt-2">
                 <div class="flex items-center justify-between px-1">
                   <h3 class="text-[10px] font-bold uppercase tracking-widest text-muted">
-                    Filters & Effects
+                    Filters &amp; Effects
                   </h3>
                   <UButton
                     label="Reset Filters"
@@ -1274,13 +1432,5 @@ defineExpose({
         </div>
       </aside>
     </div>
-
-    <!-- Change Image Button using Nuxt UI -->
-    <Teleport v-if="hasImage" to="body">
-      <div class="hidden">
-        <!-- We use this purely to capture the upload logic if needed elsewhere,
-             but UFileUpload is mostly used in Slots / Tools -->
-      </div>
-    </Teleport>
   </div>
 </template>
