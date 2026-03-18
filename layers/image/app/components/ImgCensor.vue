@@ -178,72 +178,73 @@ defineExpose({
     </div>
 
     <!-- The Interaction Overlay / Drawing Surface -->
-    <div
-      v-if="isActive"
-      class="u-img-censor-overlay absolute inset-0 w-full h-full pointer-events-auto cursor-crosshair overflow-visible"
-      @mousedown.stop.prevent="handleMouseDown"
-      @touchstart.stop.prevent="handleMouseDown">
-      <!-- Multiple Selection Boxes -->
-      <template v-if="useArea">
-        <div
-          v-for="sel in selections"
-          :key="sel.id"
-          :ref="el => setBoxRef(sel.id, el as HTMLElement | null)"
-          class="u-img-censor-box absolute pointer-events-auto cursor-move group"
-          :class="[
-            { 'is-interacting': activeSelectionId === sel.id && isInteracting },
-            { 'is-active': activeSelectionId === sel.id },
-            { 'is-blur': sel.mode === 'blur' },
-            { 'is-pixelate': sel.mode === 'pixelate' },
-          ]"
-          :style="{
-            'transform': `translate3d(${sel.x}px, ${sel.y}px, 0)`,
-            'width': sel.width + 'px',
-            'height': sel.height + 'px',
-            'zIndex': activeSelectionId === sel.id ? 100 : 10,
-            '--intensity': sel.intensity + 'px',
-            '--pixel-intensity': (sel.intensity / 2) + 'px',
-            '--outline-width': (2 * counterScale) + 'px',
-            '--active-outline': (4 * counterScale) + 'px',
-            '--shadow-width': (1 * counterScale) + 'px',
-          }"
-          @mousedown.stop.prevent="state.initiateInteraction($event, sel.id, 'move')"
-          @touchstart.stop.prevent="state.initiateInteraction($event, sel.id, 'move')">
-          <!-- Delete button for active selection -->
+    <Teleport v-if="isActive && imgStudio?.overlayRef.value" :to="imgStudio.overlayRef.value">
+      <div
+        class="u-img-censor-overlay absolute inset-0 w-full h-full pointer-events-auto cursor-crosshair overflow-visible"
+        @mousedown.stop.prevent="handleMouseDown"
+        @touchstart.stop.prevent="handleMouseDown">
+        <!-- Multiple Selection Boxes -->
+        <template v-if="useArea">
           <div
-            v-if="activeSelectionId === sel.id && !isInteracting"
-            class="absolute pointer-events-auto bg-black text-white rounded-full flex items-center justify-center cursor-pointer hover:bg-red-500 transition-colors z-50 shadow-lg"
-            :style="{
-              width: `${24 * counterScale}px`,
-              height: `${24 * counterScale}px`,
-              top: `-${12 * counterScale}px`,
-              right: `-${12 * counterScale}px`,
-            }"
-            title="Remove this area"
-            @mousedown.stop.prevent="state.removeSelection(sel.id)"
-            @touchstart.stop.prevent="state.removeSelection(sel.id)">
-            <UIcon name="i-lucide-x" :style="{ width: `${14 * counterScale}px`, height: `${14 * counterScale}px` }" />
-          </div>
-
-          <!-- Selection Area Highlight -->
-          <div
-            class="absolute inset-0 group-[.is-interacting]:bg-primary/30"
+            v-for="sel in selections"
+            :key="sel.id"
+            :ref="el => setBoxRef(sel.id, el as HTMLElement | null)"
+            class="u-img-censor-box absolute pointer-events-auto cursor-move group"
             :class="[
-              (activeSelectionId === sel.id && isInteracting) ? 'border-primary' : 'border-transparent',
-              { 'transition-all duration-200': !isInteracting },
+              { 'is-interacting': activeSelectionId === sel.id && isInteracting },
+              { 'is-active': activeSelectionId === sel.id },
+              { 'is-blur': sel.mode === 'blur' },
+              { 'is-pixelate': sel.mode === 'pixelate' },
             ]"
-            :style="{ borderWidth: (2 * counterScale) + 'px' }" />
+            :style="{
+              'transform': `translate3d(${sel.x}px, ${sel.y}px, 0)`,
+              'width': sel.width + 'px',
+              'height': sel.height + 'px',
+              'zIndex': activeSelectionId === sel.id ? 100 : 10,
+              '--intensity': sel.intensity + 'px',
+              '--pixel-intensity': (sel.intensity / 2) + 'px',
+              '--outline-width': (2 * counterScale) + 'px',
+              '--active-outline': (4 * counterScale) + 'px',
+              '--shadow-width': (1 * counterScale) + 'px',
+            }"
+            @mousedown.stop.prevent="state.initiateInteraction($event, sel.id, 'move')"
+            @touchstart.stop.prevent="state.initiateInteraction($event, sel.id, 'move')">
+            <!-- Delete button for active selection -->
+            <div
+              v-if="activeSelectionId === sel.id && !isInteracting"
+              class="absolute pointer-events-auto bg-black text-white rounded-full flex items-center justify-center cursor-pointer hover:bg-red-500 transition-colors z-50 shadow-lg"
+              :style="{
+                width: `${24 * counterScale}px`,
+                height: `${24 * counterScale}px`,
+                top: `-${12 * counterScale}px`,
+                right: `-${12 * counterScale}px`,
+              }"
+              title="Remove this area"
+              @mousedown.stop.prevent="state.removeSelection(sel.id)"
+              @touchstart.stop.prevent="state.removeSelection(sel.id)">
+              <UIcon name="i-lucide-x" :style="{ width: `${14 * counterScale}px`, height: `${14 * counterScale}px` }" />
+            </div>
 
-          <!-- High-Visibility Handles (Only for active selection) -->
-          <template v-if="activeSelectionId === sel.id">
-            <ImgHandler position="tl" :active="isInteracting" :style="{ transform: `scale(${counterScale * 0.6})` }" @mousedown.stop.prevent="state.initiateInteraction($event, sel.id, 'resize', 'tl')" />
-            <ImgHandler position="tr" :active="isInteracting" :style="{ transform: `scale(${counterScale * 0.6})` }" @mousedown.stop.prevent="state.initiateInteraction($event, sel.id, 'resize', 'tr')" />
-            <ImgHandler position="bl" :active="isInteracting" :style="{ transform: `scale(${counterScale * 0.6})` }" @mousedown.stop.prevent="state.initiateInteraction($event, sel.id, 'resize', 'bl')" />
-            <ImgHandler position="br" :active="isInteracting" :style="{ transform: `scale(${counterScale * 0.6})` }" @mousedown.stop.prevent="state.initiateInteraction($event, sel.id, 'resize', 'br')" />
-          </template>
-        </div>
-      </template>
-    </div>
+            <!-- Selection Area Highlight -->
+            <div
+              class="absolute inset-0 group-[.is-interacting]:bg-primary/30"
+              :class="[
+                (activeSelectionId === sel.id && isInteracting) ? 'border-primary' : 'border-transparent',
+                { 'transition-all duration-200': !isInteracting },
+              ]"
+              :style="{ borderWidth: (2 * counterScale) + 'px' }" />
+
+            <!-- High-Visibility Handles (Only for active selection) -->
+            <template v-if="activeSelectionId === sel.id">
+              <ImgHandler position="tl" :active="isInteracting" :style="{ transform: `scale(${counterScale * 0.6})` }" @mousedown.stop.prevent="state.initiateInteraction($event, sel.id, 'resize', 'tl')" />
+              <ImgHandler position="tr" :active="isInteracting" :style="{ transform: `scale(${counterScale * 0.6})` }" @mousedown.stop.prevent="state.initiateInteraction($event, sel.id, 'resize', 'tr')" />
+              <ImgHandler position="bl" :active="isInteracting" :style="{ transform: `scale(${counterScale * 0.6})` }" @mousedown.stop.prevent="state.initiateInteraction($event, sel.id, 'resize', 'bl')" />
+              <ImgHandler position="br" :active="isInteracting" :style="{ transform: `scale(${counterScale * 0.6})` }" @mousedown.stop.prevent="state.initiateInteraction($event, sel.id, 'resize', 'br')" />
+            </template>
+          </div>
+        </template>
+      </div>
+    </Teleport>
   </div>
 </template>
 
