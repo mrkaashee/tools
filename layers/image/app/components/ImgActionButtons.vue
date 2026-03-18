@@ -1,10 +1,27 @@
-<script setup lang="ts">
+<script lang="ts">
 import { inject, computed } from 'vue'
+import type { AppConfig } from '@nuxt/schema'
+import theme from '../utils/themes/img-action-buttons'
+import type { ComponentConfig } from '../types/tv'
 import type { ImageEditorContext, ImgActionButtonsProps } from '../types/editor'
+import { tv } from '../utils/tv'
+import type { StudioAppConfig } from '../types/studio'
 
-const props = defineProps<ImgActionButtonsProps>()
+export type StudioActionButtons = ComponentConfig<typeof theme, AppConfig, 'studio'>
+
+export interface StudioActionButtonsProps extends ImgActionButtonsProps {
+  ui?: StudioActionButtons['slots']
+}
+</script>
+
+<script setup lang="ts">
+const appConfig = useAppConfig() as StudioAppConfig
+
+const props = defineProps<StudioActionButtonsProps>()
 
 const imgStudio = inject<ImageEditorContext>('imgStudio')
+
+const resUI = computed(() => tv({ extend: tv(theme), ...(appConfig.ui?.actionButtons || {}) })(props.ui))
 
 const activeTool = computed(() => imgStudio?.activeTool.value)
 
@@ -24,13 +41,14 @@ const executeApply = () => {
 </script>
 
 <template>
-  <div class="flex gap-2">
+  <div :class="resUI.root()">
     <UButton
       v-if="!activeTool"
       label="Crop Avatar"
       icon="i-lucide-crop"
       size="xs"
       variant="ghost"
+      :class="resUI.button()"
       @click="startCropping" />
     <UButton
       v-else-if="isApplyToolActive"
@@ -38,6 +56,7 @@ const executeApply = () => {
       color="primary"
       icon="i-lucide-download"
       size="xs"
+      :class="resUI.button()"
       @click="executeApply" />
     <slot />
   </div>

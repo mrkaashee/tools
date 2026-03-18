@@ -1,14 +1,30 @@
-<script lang="ts" setup>
+<script lang="ts">
 import { ref, computed, inject } from 'vue'
+import type { AppConfig } from '@nuxt/schema'
+import theme from '../utils/themes/img-preview'
+import type { ComponentConfig } from '../types/tv'
 import type { ImageEditorContext } from '../types/editor'
-import type { StudioPreviewProps } from './ImgStudio.vue'
+import { tv } from '../utils/tv'
+import type { StudioAppConfig } from '../types/studio'
 
-const props = defineProps<StudioPreviewProps & {
+export type StudioPreview = ComponentConfig<typeof theme, AppConfig, 'studio'>
+
+export interface StudioPreviewProps {
+  headless?: boolean
   avatarMode?: boolean
   size?: number
-}>()
+  ui?: StudioPreview['slots']
+}
+</script>
+
+<script lang="ts" setup>
+const appConfig = useAppConfig() as StudioAppConfig
+
+const props = defineProps<StudioPreviewProps>()
 
 const imgStudio = inject<ImageEditorContext>('imgStudio')
+
+const resUI = computed(() => tv({ extend: tv(theme), ...(appConfig.ui?.preview || {}) })(props.ui))
 
 const isComparing = ref(false)
 
@@ -45,67 +61,62 @@ const avatarPreviewStyle = computed(() => {
 
 <template>
   <!-- Avatar Mode -->
-  <div v-if="props.avatarMode" :style="{ width: (props.size || 80) + 'px', height: (props.size || 80) + 'px' }" class="relative rounded-full overflow-hidden shrink-0 bg-inverted/5 border border-default shadow-sm">
+  <div v-if="props.avatarMode" :class="resUI.avatarRoot()" :style="{ width: (props.size || 80) + 'px', height: (props.size || 80) + 'px' }">
     <!-- Checked background pattern for transparent images -->
-    <div
-      class="absolute inset-0 z-0 opacity-20"
-      style="background-image: linear-gradient(45deg, #808080 25%, transparent 25%), linear-gradient(-45deg, #808080 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #808080 75%), linear-gradient(-45deg, transparent 75%, #808080 75%); background-size: 10px 10px; background-position: 0 0, 0 5px, 5px -5px, -5px 0px;" />
+    <div :class="resUI.checkerboard()" style="background-image: linear-gradient(45deg, #808080 25%, transparent 25%), linear-gradient(-45deg, #808080 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #808080 75%), linear-gradient(-45deg, transparent 75%, #808080 75%); background-size: 10px 10px; background-position: 0 0, 0 5px, 5px -5px, -5px 0px;" />
 
     <img
       v-if="currentImage"
       :src="currentImage"
-      class="absolute top-0 left-0 max-w-none origin-top-left z-10"
+      :class="resUI.avatarImage()"
       :style="avatarPreviewStyle">
-    <div v-else class="absolute inset-0 flex items-center justify-center z-10">
+    <div v-else :class="resUI.avatarPlaceholder()">
       <UIcon name="i-heroicons-user" class="w-1/2 h-1/2 text-muted" />
     </div>
   </div>
 
   <!-- Normal Mode -->
-  <div v-else-if="imgStudio?.hasImage" class="space-y-3">
-    <div v-if="!props.headless" class="flex items-center justify-between px-1">
-      <h3 class="text-[10px] font-bold uppercase tracking-widest text-muted">
+  <div v-else-if="imgStudio?.hasImage" :class="resUI.root()">
+    <div v-if="!props.headless" :class="resUI.header()">
+      <h3 :class="resUI.title()">
         Preview & Compare
       </h3>
-      <UBadge color="neutral" variant="subtle" size="xs">
+      <UBadge color="neutral" variant="subtle" size="xs" :class="resUI.badge()">
         {{ width }} x {{ height }}
       </UBadge>
     </div>
 
-    <div class="relative group rounded-xl overflow-hidden border border-default bg-muted/50 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.1)]">
+    <div :class="resUI.previewContainer()">
       <!-- Checked background pattern for transparent images -->
-      <div
-        class="absolute inset-0 z-0 opacity-20"
-        style="background-image: linear-gradient(45deg, #808080 25%, transparent 25%), linear-gradient(-45deg, #808080 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #808080 75%), linear-gradient(-45deg, transparent 75%, #808080 75%); background-size: 10px 10px; background-position: 0 0, 0 5px, 5px -5px, -5px 0px;" />
+      <div :class="resUI.checkerboard()" style="background-image: linear-gradient(45deg, #808080 25%, transparent 25%), linear-gradient(-45deg, #808080 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #808080 75%), linear-gradient(-45deg, transparent 75%, #808080 75%); background-size: 10px 10px; background-position: 0 0, 0 5px, 5px -5px, -5px 0px;" />
 
       <!-- The Image -->
-      <div class="relative w-full aspect-video flex items-center justify-center p-2 z-10 backdrop-blur-[2px]">
+      <div :class="resUI.imageWrapper()">
         <img
           v-if="currentImage"
           :src="currentImage"
-          class="max-w-full max-h-full object-contain rounded drop-shadow-md transition-all duration-200"
-          :class="{ 'opacity-80 scale-95': isComparing }">
+          :class="[resUI.image(), { 'opacity-80 scale-95': isComparing }]">
       </div>
 
       <!-- Compare Overlay Instruction (Only shows on hover) -->
-      <div class="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none bg-black/40">
-        <UBadge v-if="!isComparing" color="neutral" variant="solid" class="shadow-lg backdrop-blur-md bg-white/90 text-black">
+      <div :class="resUI.compareOverlay()">
+        <UBadge v-if="!isComparing" color="neutral" variant="solid" :class="resUI.compareBadge()" class="bg-white/90 text-black">
           Hold 'Compare' to see original
         </UBadge>
-        <UBadge v-else color="primary" variant="solid" class="shadow-lg animate-pulse">
+        <UBadge v-else color="primary" variant="solid" :class="resUI.compareBadge()" class="animate-pulse">
           Showing Original
         </UBadge>
       </div>
     </div>
 
     <!-- Actions -->
-    <div class="flex gap-2">
+    <div :class="resUI.actions()">
       <UButton
         block
         color="neutral"
         variant="soft"
         icon="i-lucide-split-square-horizontal"
-        class="flex-1 transition-transform duration-200 active:scale-[0.97]"
+        :class="resUI.compareButton()"
         @mousedown="isComparing = true"
         @mouseup="isComparing = false"
         @mouseleave="isComparing = false"
@@ -120,6 +131,7 @@ const avatarPreviewStyle = computed(() => {
           icon="i-lucide-download"
           color="primary"
           variant="soft"
+          :class="resUI.exportButton()"
           @click="imgStudio?.applyAndExport('preview-export.png')" />
       </UTooltip>
     </div>

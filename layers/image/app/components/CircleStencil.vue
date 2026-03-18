@@ -1,10 +1,17 @@
-<script setup lang="ts">
+<script lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, inject } from 'vue'
 import { useResizeObserver, useEventListener } from '@vueuse/core'
-
+import type { AppConfig } from '@nuxt/schema'
+import theme from '../utils/themes/circle-stencil'
+import type { ComponentConfig } from '../types/tv'
 import type { ImageEditorContext } from '../types/editor'
+import { useInteraction } from '../composables/useInteraction'
+import { tv } from '../utils/tv'
+import { useAppConfig } from '#imports'
 
-const props = withDefaults(defineProps<{
+export type StudioCircleStencil = ComponentConfig<typeof theme, AppConfig, 'circleStencil'>
+
+export interface StudioCircleStencilProps {
   /** Fixed mode: the mask stays center, the image pans behind it (fixedStencil) */
   fixed?: boolean
   /** Shape of the crop area: 'circle' or 'rect'. Default: 'circle' */
@@ -21,7 +28,14 @@ const props = withDefaults(defineProps<{
   outputWidth?: number
   /** Exact height in pixels for the exported crop. Default: undefined (uses scaled dimensions) */
   outputHeight?: number
-}>(), {
+  ui?: StudioCircleStencil['slots']
+}
+</script>
+
+<script setup lang="ts">
+const appConfig = useAppConfig() as StudioCircleStencil['AppConfig']
+
+const props = withDefaults(defineProps<StudioCircleStencilProps>(), {
   fixed: false,
   shape: 'circle',
   aspectRatio: 1,
@@ -36,9 +50,12 @@ const emit = defineEmits<{
 
 const imgStudio = inject<ImageEditorContext>('imgStudio')
 
+const resUI = computed(() => tv({ extend: tv(theme), ...(appConfig.ui?.circleStencil || {}) })({
+  shape: props.shape,
+  interacting: isInteracting.value,
+}))
+
 // ─── MODE DETECTION ────────────────────────────────────────────────────────────
-// Fixed mode: always active when fixedStencil is on, OR when tool is 'fixed-crop'
-// Movable mode: active only when tool is 'stencil-circle'
 const isFixed = computed(() => props.fixed && !!imgStudio?.fixedStencil?.value)
 const isMovable = computed(() => !props.fixed && imgStudio?.activeTool.value === 'stencil-circle')
 const isActive = computed(() => isFixed.value || isMovable.value)
@@ -56,7 +73,6 @@ const updateFixedMetrics = () => {
   const h = el.offsetHeight
   const pct = props.cropPercent / 100
 
-  // If cropPercent is 100, we skip complex math to ensure absolute 1:1 fit
   if (props.cropPercent === 100) {
     cropWidth.value = w
     cropHeight.value = h
@@ -82,7 +98,6 @@ const updateFixedMetrics = () => {
     }
   }
 
-  // Update editor's pan bounds
   if (imgStudio?.panBounds) {
     imgStudio.panBounds.value = {
       top: fixedPos.value.top,
@@ -106,11 +121,6 @@ onMounted(() => {
     setTimeout(updateFixedMetrics, 100)
 })
 
-onUnmounted(() => {
-  // Logic cleanup handled by VueUse
-})
-
-// ─── FIXED MODE APPLY ──────────────────────────────────────────────────────────
 const applyFixed = async () => {
   const canvas = imgStudio?.getCanvas()
   const state = imgStudio?.getImageState()
@@ -204,7 +214,6 @@ const startInteractionHandler = (e: MouseEvent | TouchEvent, kind: 'move' | 'res
   startInteraction(e, kind, stencil.value)
 }
 
-// ─── MOVABLE MODE APPLY ────────────────────────────────────────────────────────
 const applyStencil = () => {
   const canvas = imgStudio?.getCanvas()
   if (!canvas) return
@@ -271,18 +280,10 @@ defineExpose({
 <template>
   <!-- ── FIXED MODE ──────────────────────────────────────────────── -->
   <Teleport v-if="isFixed && imgStudio?.fixedOverlayRef?.value" :to="imgStudio.fixedOverlayRef.value">
-    <div class="absolute inset-0 pointer-events-none">
+    <div :class="resUI.fixedWrapper()">
       <div
-        class="absolute pointer-events-none shadow-[0_0_0_9999px_rgba(0,0,0,0.85)] z-40"
-        :class="{
-          'rounded-full': shape === 'circle',
-          'rounded-lg': shape === 'rect',
-        }"
+        :class="resUI.fixedMask()"
         :style="{
-          // left: props.cropPercent === 100 ? '0' : fixedPos.left + 'px',
-          // top: props.cropPercent === 100 ? '0' : fixedPos.top + 'px',
-          // width: props.cropPercent === 100 ? '100%' : cropWidth + 'px',
-          // height: props.cropPercent === 100 ? '100%' : cropHeight + 'px',
           left: fixedPos.left + 'px',
           top: fixedPos.top + 'px',
           width: cropWidth + 'px',
@@ -291,9 +292,8 @@ defineExpose({
           backfaceVisibility: 'hidden',
           transform: 'translateZ(0)',
         }">
-        <!-- Subtle crosshair helps to center faces / subjects -->
-        <div class="absolute inset-x-0 top-1/2 h-px bg-white/10 -translate-y-1/2" />
-        <div class="absolute inset-y-0 left-1/2 w-px bg-white/10 -translate-x-1/2" />
+        <div :class="resUI.fixedCrosshairX()" />
+        <div :class="resUI.fixedCrosshairY()" />
       </div>
     </div>
   </Teleport>
@@ -301,19 +301,16 @@ defineExpose({
   <!-- ── MOVABLE MODE ───────────────────────────────────────────── -->
   <Teleport v-else-if="isMovable && imgStudio?.overlayRef.value" :to="imgStudio.overlayRef.value">
     <div
-      class="absolute inset-0 pointer-events-none group"
-      :class="{ 'is-interacting': isInteracting }">
-      <!-- Dimmed background with circular cutout -->
+      :class="resUI.movableWrapper()">
       <div
-        class="absolute inset-0 bg-inverted/60 backdrop-blur-[1px]"
+        :class="resUI.movableMask()"
         :style="{
           maskImage: `radial-gradient(circle at ${stencil.x}px ${stencil.y}px, transparent ${stencil.radius}px, black ${stencil.radius}px)`,
           WebkitMaskImage: `radial-gradient(circle at ${stencil.x}px ${stencil.y}px, transparent ${stencil.radius}px, black ${stencil.radius}px)`,
         }" />
 
-      <!-- Selection Circle -->
       <div
-        class="absolute pointer-events-auto cursor-move rounded-full z-40"
+        :class="resUI.movableStencil()"
         :style="{
           left: (stencil.x - stencil.radius) + 'px',
           top: (stencil.y - stencil.radius) + 'px',
@@ -322,24 +319,21 @@ defineExpose({
         }"
         @mousedown="startInteractionHandler($event, 'move')"
         @touchstart="startInteractionHandler($event, 'move')">
-        <!-- Animated Grid Lines (inscribed square) -->
         <transition
           enter-active-class="transition-opacity duration-200"
           enter-from-class="opacity-0"
           leave-active-class="transition-opacity duration-200"
           leave-to-class="opacity-0">
-          <div v-if="gridLines && isInteracting" class="absolute inset-[15%] overflow-hidden rounded-sm">
-            <div class="absolute left-0 w-full h-px bg-inverted/30 top-1/3" />
-            <div class="absolute left-0 w-full h-px bg-inverted/30 top-2/3" />
-            <div class="absolute top-0 h-full w-px bg-inverted/30 left-1/3" />
-            <div class="absolute top-0 h-full w-px bg-inverted/30 left-2/3" />
+          <div v-if="gridLines && isInteracting" :class="resUI.gridWrapper()">
+            <div :class="resUI.gridLineX() + ' top-1/3'" />
+            <div :class="resUI.gridLineX() + ' top-2/3'" />
+            <div :class="resUI.gridLineY() + ' left-1/3'" />
+            <div :class="resUI.gridLineY() + ' left-2/3'" />
           </div>
         </transition>
 
-        <!-- Stencil Border -->
-        <div class="absolute inset-0 border-[1.5px] border-inverted rounded-full shadow-[0_0_20px_--theme(--color-primary-500/0.4)] transition-all duration-200 group-[.is-interacting]:border-primary group-[.is-interacting]:shadow-[0_0_30px_--theme(--color-primary-500/0.6)] shadow-inverted/30" />
+        <div :class="resUI.border()" />
 
-        <!-- Resize Handle -->
         <ImgHandler
           position="bottom-right"
           :active="isInteracting"

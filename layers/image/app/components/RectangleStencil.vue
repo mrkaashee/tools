@@ -1,12 +1,19 @@
-<script setup lang="ts">
+<script lang="ts">
 import { inject, ref, computed, watch, onUnmounted } from 'vue'
+import type { AppConfig } from '@nuxt/schema'
+import theme from '../utils/themes/rectangle-stencil'
+import type { ComponentConfig } from '../types/tv'
 import type { ImageEditorContext } from '../types/editor'
 import type { CropArea as Rect } from '../types/cropper'
 import ImgHandler from './ImgHandler.vue'
 import { useInteraction } from '../composables/useInteraction'
 import { calculateMove, calculateResize } from '../utils/interaction'
+import { tv } from '../utils/tv'
+import { useAppConfig } from '#imports'
 
-const props = withDefaults(defineProps<{
+export type StudioRectangleStencil = ComponentConfig<typeof theme, AppConfig, 'rectangleStencil'>
+
+export interface StudioRectangleStencilProps {
   aspectRatio?: number
   minWidth?: number
   minHeight?: number
@@ -14,7 +21,14 @@ const props = withDefaults(defineProps<{
   gridLines?: boolean
   outputWidth?: number
   outputHeight?: number
-}>(), {
+  ui?: StudioRectangleStencil['slots']
+}
+</script>
+
+<script setup lang="ts">
+const appConfig = useAppConfig() as StudioRectangleStencil['AppConfig']
+
+const props = withDefaults(defineProps<StudioRectangleStencilProps>(), {
   initialCropPercent: 80,
   minWidth: 50,
   minHeight: 50,
@@ -26,6 +40,10 @@ const emit = defineEmits<{
 }>()
 
 const imgStudio = inject<ImageEditorContext>('imgStudio')
+
+const resUI = computed(() => tv({ extend: tv(theme), ...(appConfig.ui?.rectangleStencil || {}) })({
+  interacting: isInteracting.value,
+}))
 
 const isActive = computed(() => imgStudio?.activeTool.value === 'crop' || imgStudio?.activeTool.value === 'stencil-rect')
 
@@ -146,11 +164,10 @@ defineExpose({
 <template>
   <Teleport v-if="isActive && imgStudio?.overlayRef.value" :to="imgStudio.overlayRef.value">
     <div
-      class="absolute inset-0 pointer-events-none group"
-      :class="{ 'is-interacting': isInteracting }">
+      :class="resUI.movableWrapper()">
       <!-- Dimmed background outside stencil area -->
       <div
-        class="absolute inset-0 bg-inverted/60 backdrop-blur-[1px] transition-colors duration-300 group-[.is-interacting]:bg-inverted/40"
+        :class="resUI.movableMask()"
         :style="{
           clipPath: `polygon(
             0% 0%, 0% 100%,
@@ -164,7 +181,7 @@ defineExpose({
 
       <!-- Selection box -->
       <div
-        class="absolute pointer-events-auto cursor-move z-40"
+        :class="resUI.movableStencil()"
         :style="{
           left: stencil.x + 'px',
           top: stencil.y + 'px',
@@ -179,16 +196,16 @@ defineExpose({
           enter-from-class="opacity-0"
           leave-active-class="transition-opacity duration-200"
           leave-to-class="opacity-0">
-          <div v-if="gridLines && isInteracting" class="absolute inset-0 overflow-hidden">
-            <div class="absolute left-0 w-full h-px bg-inverted/30 top-1/3" />
-            <div class="absolute left-0 w-full h-px bg-inverted/30 top-2/3" />
-            <div class="absolute top-0 h-full w-px bg-inverted/30 left-1/3" />
-            <div class="absolute top-0 h-full w-px bg-inverted/30 left-2/3" />
+          <div v-if="gridLines && isInteracting" :class="resUI.gridWrapper()">
+            <div :class="resUI.gridLineX() + ' top-1/3'" />
+            <div :class="resUI.gridLineX() + ' top-2/3'" />
+            <div :class="resUI.gridLineY() + ' left-1/3'" />
+            <div :class="resUI.gridLineY() + ' left-2/3'" />
           </div>
         </transition>
 
         <!-- Stencil Border (futuristic glow) -->
-        <div class="absolute inset-0 border border-inverted shadow-[0_0_15px_--theme(--color-primary-500/0.3),inset_0_0_10px_--theme(--color-primary-500/0.2)] transition-all duration-200 group-[.is-interacting]:border-primary group-[.is-interacting]:border-[1.5px]" />
+        <div :class="resUI.border()" />
 
         <!-- High-end Handlers -->
         <ImgHandler position="top-left" @mousedown.stop="startInteractionHandler($event, 'resize', 'top-left')" />

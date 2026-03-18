@@ -1,8 +1,30 @@
-<script setup lang="ts">
-import { ref, inject } from 'vue'
+<script lang="ts">
+import { ref, inject, computed } from 'vue'
+import type { AppConfig } from '@nuxt/schema'
+import theme from '../utils/themes/img-upload'
+import type { ComponentConfig } from '../types/tv'
 import type { ImageEditorContext } from '../types/editor'
+import { tv } from '../utils/tv'
+import { useAppConfig } from '#imports'
+
+export type StudioUpload = ComponentConfig<typeof theme, AppConfig, 'upload'>
+
+export interface StudioUploadProps {
+  ui?: StudioUpload['slots']
+}
+</script>
+
+<script setup lang="ts">
+const appConfig = useAppConfig() as StudioUpload['AppConfig']
+
+const props = defineProps<StudioUploadProps>()
 
 const imgStudio = inject<ImageEditorContext>('imgStudio')
+
+const resUI = computed(() => tv({ extend: tv(theme), ...(appConfig.ui?.upload || {}) })({
+  ...props.ui,
+}))
+
 const imageUrl = ref('')
 
 const loadFromUrl = () => {
@@ -20,35 +42,36 @@ const loadFromUrl = () => {
         Image Source
       </h3>
     </template>
-    <div class="space-y-4">
+    <div :class="resUI.root()">
       <div
-        class="group relative flex items-center justify-center p-6 border-2 border-dashed border-muted rounded-xl hover:border-primary transition-all cursor-pointer bg-muted"
+        :class="resUI.dropzone()"
         @click="() => imgStudio?.triggerFileInput()">
-        <div class="text-center">
-          <UIcon name="i-lucide-upload-cloud" class="w-8 h-8 mx-auto text-muted mb-2" />
-          <p class="text-sm font-medium text-default">
+        <div :class="resUI.dropzoneContent()">
+          <UIcon name="i-lucide-upload-cloud" :class="resUI.dropzoneIcon()" />
+          <p :class="resUI.dropzoneText()">
             Click to upload an image
           </p>
         </div>
       </div>
 
-      <div class="flex items-center gap-2">
-        <div class="h-px bg-accented flex-1" />
-        <span class="text-xs text-muted uppercase font-medium">or</span>
-        <div class="h-px bg-accented flex-1" />
+      <div :class="resUI.divider()">
+        <div :class="resUI.dividerLine()" />
+        <span :class="resUI.dividerText()">or</span>
+        <div :class="resUI.dividerLine()" />
       </div>
 
-      <div class="flex gap-2">
+      <div :class="resUI.urlInputWrapper()">
         <UInput
           v-model="imageUrl"
           type="url"
           placeholder="Paste image URL..."
-          class="flex-1"
+          :class="resUI.urlInput()"
           @keyup.enter="loadFromUrl" />
         <UButton
           label="Load"
           color="neutral"
           variant="outline"
+          :class="resUI.urlButton()"
           @click="loadFromUrl" />
       </div>
     </div>

@@ -6,7 +6,6 @@ import type { AppConfig } from '@nuxt/schema'
 import { useAppConfig } from '#imports'
 import { useInteraction } from '../composables/useInteraction'
 import { useWorkerProcessor } from '../composables/useWorkerProcessor'
-import { PRESET_FILTERS } from '../composables/useImageProcessor'
 import type { Layer, ImageState, ChangeEvent, CropArea, AspectPreset, ImageEditorContext } from '../types/editor'
 import { tv } from '../utils/tv'
 import type { ComponentConfig } from '../types/tv'
@@ -312,13 +311,14 @@ const viewportRef = ref<HTMLDivElement | null>(null)
 const fixedOverlayRef = ref<HTMLDivElement | null>(null)
 const toolbarTargetRef = ref<HTMLDivElement | null>(null)
 
-const resUI = computed(() => tv({ extend: tv(theme), ...(appConfig.ui?.studio || {}) })({
+const resUI = computed(() => tv({ extend: tv(theme), ...(appConfig.ui?.studio || {}) }) ({
   toolbarPosition: toolbarPosition.value,
   fixedStencil: fixedStencil.value,
   hasBoard: hasBoard.value,
   hasBorder: hasBorder.value,
   ...props.ui,
-}))
+})
+)
 
 // Reactive viewport dimensions
 const { width: vWidth, height: vHeight } = useElementSize(viewportRef)
@@ -1075,6 +1075,7 @@ const editorAPI: ImageEditorContext = {
   processImage,
   handlerCfg,
   mode: resolvedMode,
+  triggerFileInput,
 }
 
 // Provide context to child tools
@@ -1160,7 +1161,7 @@ defineExpose({
   <div
     v-if="uploaderOnly && !hasImage"
     class="flex flex-col items-center justify-center w-full h-full min-h-64 bg-inverted rounded-xl border border-inverted/5 p-8"
-    :class="resUI.emptyStateContainer">
+    :class="resUI.emptyStateContainer()">
     <UFileUpload
       variant="area"
       accept="image/*"
@@ -1174,14 +1175,12 @@ defineExpose({
   <!-- Full editor mode -->
   <Primitive
     :as="props.as || 'div'"
-    class="flex flex-col w-full h-full bg-elevated overflow-hidden"
     :class="[
-      { 'border border-default rounded-xl': hasBorder },
-      resUI.root,
+      resUI.root(),
       props.class,
     ]">
     <!-- Header Area -->
-    <div ref="toolbarTargetRef" :class="resUI.toolbar">
+    <div ref="toolbarTargetRef" :class="resUI.header()">
       <slot name="header" :editor="editorAPI" />
     </div>
 
@@ -1190,31 +1189,15 @@ defineExpose({
       right (default) → row, left → row-reverse, bottom → col-reverse, top → col
     -->
     <div
-      class="flex-1 flex overflow-hidden relative"
-      :class="{
-        'flex-row': toolbarPosition === 'right',
-        'flex-row-reverse': toolbarPosition === 'left',
-        'flex-col': toolbarPosition === 'top',
-        'flex-col-reverse': toolbarPosition === 'bottom',
-        'max-lg:flex-col': toolbarPosition === 'right' || toolbarPosition === 'left',
-      }">
+      :class="resUI.toolbar()">
       <!-- Canvas / Viewport Area (hidden if canvas.hide = true) -->
       <div
         v-show="!hideCanvas"
         ref="viewportRef"
-        class="flex-1 overflow-hidden relative will-change-scroll"
-        :class="[
-          {
-            'flex items-center justify-center': !fixedStencil,
-            'bg-inverted': !fixedStencil && hasBoard,
-            'bg-default': !fixedStencil && !hasBoard,
-            'bg-black/95': fixedStencil,
-            'cursor-grab': hasImage && !disablePanning,
-            'cursor-grabbing': isDragging && !disablePanning,
-            'cursor-default': hasImage && disablePanning,
-          },
-          resUI.viewport,
-        ]"
+        :class="resUI.viewport({
+          interacting: isDragging,
+          panning: !disablePanning,
+        })"
         :style="(!fixedStencil && hasBoard) ? {
           backgroundImage: 'linear-gradient(45deg, #151515 25%, transparent 25%), linear-gradient(-45deg, #151515 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #151515 75%), linear-gradient(-45deg, transparent 75%, #151515 75%)',
           backgroundSize: '20px 20px',
@@ -1226,30 +1209,26 @@ defineExpose({
         <div
           v-if="fixedStencil"
           ref="fixedOverlayRef"
-          class="absolute inset-0 z-30 pointer-events-none w-full h-full" />
+          :class="resUI.viewport()" />
 
         <!-- Empty state: Upload dropzone -->
         <div
           v-if="!canvasVisible && !isLoading && !uploaderCfg?.hide"
-          class="absolute inset-0 flex flex-col items-center justify-center z-10 p-12"
-          :class="resUI.emptyState">
+          :class="resUI.emptyState()">
           <!-- Premium upload area -->
-          <div class="w-full max-w-md flex flex-col items-center gap-6">
+          <div :class="resUI.emptyStateContainer()">
             <div
-              class="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center ring-1 ring-primary/20"
-              :class="resUI.emptyStateIconWrapper">
+              :class="resUI.emptyStateIconWrapper()">
               <UIcon
                 name="i-lucide-image-plus"
-                class="w-8 h-8 text-primary"
-                :class="resUI.emptyStateIcon" />
+                :class="resUI.emptyStateIcon()" />
             </div>
-            <div class="text-center space-y-1" :class="resUI.emptyStateText">
+            <div :class="resUI.emptyStateText()">
               <p
-                class="text-sm font-semibold text-highlighted"
-                :class="resUI.emptyStateTitle">
+                :class="resUI.emptyStateTitle()">
                 {{ uploaderCfg?.label ?? 'Get Started' }}
               </p>
-              <p class="text-xs text-muted" :class="resUI.emptyStateDescription">
+              <p :class="resUI.emptyStateDescription()">
                 Drag &amp; drop or click to upload an image
               </p>
             </div>
@@ -1257,8 +1236,7 @@ defineExpose({
               variant="area"
               accept="image/*"
               size="lg"
-              class="w-full"
-              :class="resUI.uploader"
+              :class="resUI.uploader()"
               @update:model-value="onFileChange" />
           </div>
         </div>
@@ -1267,15 +1245,7 @@ defineExpose({
              fixedStencil — absolute at top-left, single combined translate+scale transform.
              normal   — flex m-auto centering with translate+scale; zoom controlled by outer fitToScreen -->
         <div
-          class="will-change-transform shrink-0"
-          :class="[
-            {
-              'opacity-0 pointer-events-none': !canvasVisible,
-              'absolute top-0 left-0': fixedStencil,
-              'relative': !fixedStencil,
-            },
-            resUI.canvasWrapper,
-          ]"
+          :class="resUI.canvasWrapper({ visible: canvasVisible })"
           :style="{
             width: imageState.width + 'px',
             height: imageState.height + 'px',
@@ -1284,15 +1254,13 @@ defineExpose({
           }">
           <canvas
             ref="canvasRef"
-            class="block w-full h-full shadow-2xl bg-default"
-            :class="[{ hidden: resolvedMode === 'image' }, resUI.canvas]"
+            :class="[{ hidden: resolvedMode === 'image' }, resUI.canvas()]"
             :style="canvasPreviewStyle" />
           <img
             v-if="resolvedMode === 'image'"
             ref="imageRef"
             :src="currentImageUrl!"
-            class="block w-full h-full shadow-2xl bg-default object-contain pointer-events-none"
-            :class="resUI.image"
+            :class="resUI.image()"
             :style="canvasPreviewStyle"
             @load="canvasVisible = true">
           <!-- Overlay for tools (like crop handles - traditional mode) -->
@@ -1309,10 +1277,9 @@ defineExpose({
           leave-to-class="opacity-0 translate-y-2">
           <div
             v-if="showFloatingBar && hasImage"
-            class="absolute z-40 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-1.5 rounded-xl bg-inverted/80 backdrop-blur-md border border-default/20 shadow-xl"
             :class="[
               floatingBarPosition === 'top' ? 'top-4' : 'bottom-4',
-              resUI.floatingBar,
+              resUI.floatingBar(),
             ]">
             <UTooltip text="Zoom Out">
               <UButton
@@ -1383,19 +1350,9 @@ defineExpose({
       <!-- Tools Sidebar — only in normal (non-fixedStencil) editor, hidden if toolbar.hide = true -->
       <aside
         v-if="!fixedStencil && hasImage && !hideToolbar"
-        class="bg-elevated/80 backdrop-blur-md flex flex-col z-10 transition-all duration-300 ease-in-out"
-        :class="[
-          {
-            'w-80 border-l border-muted max-lg:w-full max-lg:h-87.5 max-lg:border-l-0 max-lg:border-t': toolbarPosition === 'right',
-            'w-80 border-r border-muted max-lg:w-full max-lg:h-87.5 max-lg:border-r-0 max-lg:border-b': toolbarPosition === 'left',
-            'w-full border-t border-muted h-64': toolbarPosition === 'bottom',
-            'w-full border-b border-muted h-64': toolbarPosition === 'top',
-          },
-          resUI.aside,
-        ]">
+        :class="resUI.aside()">
         <div
-          class="flex-1 overflow-y-auto p-6 flex flex-col gap-6 scrollbar-thin scrollbar-thumb-accented scrollbar-track-transparent"
-          :class="resUI.asideContent">
+          :class="resUI.asideContent()">
           <!-- Prop-Based Tools -->
           <TransitionGroup
             tag="div"
@@ -1406,15 +1363,11 @@ defineExpose({
             leave-to-class="opacity-0 -translate-x-4 blur-sm"
             move-class="transition-all duration-400 ease-in-out">
             <slot name="preview" :editor="editorAPI" :preview-props="typeof props.preview === 'object' ? props.preview : {}">
-              <UCard v-if="props.preview" key="preview" class="bg-white/70 dark:bg-slate-900/70 backdrop-blur-lg border-white/30 dark:border-white/10 shadow-md" :ui="{ body: 'p-3' }">
-                <ImgPreview v-bind="typeof props.preview === 'object' ? props.preview : {}" />
-              </UCard>
+              <ImgPreview v-if="props.preview" key="preview" v-bind="typeof props.preview === 'object' ? props.preview : {}" />
             </slot>
 
             <slot name="layers" :editor="editorAPI" :layers-props="typeof props.layers === 'object' ? props.layers : {}">
-              <UCard v-if="props.layers" key="layers" class="bg-white/70 dark:bg-slate-900/70 backdrop-blur-lg border-white/30 dark:border-white/10 shadow-md" :ui="{ body: 'p-3' }">
-                <ImgLayerManager v-bind="typeof props.layers === 'object' ? props.layers : {}" />
-              </UCard>
+              <ImgLayerManager v-if="props.layers" key="layers" v-bind="typeof props.layers === 'object' ? props.layers : {}" />
             </slot>
 
             <slot name="annotate" :editor="editorAPI" :annotate-props="typeof props.annotate === 'object' ? props.annotate : {}">
@@ -1474,207 +1427,16 @@ defineExpose({
             </slot>
 
             <slot name="transform" :editor="editorAPI" :transform-props="typeof props.transform === 'object' ? props.transform : {}">
-              <ImgTransform v-if="props.transform" key="transform" v-bind="typeof props.transform === 'object' ? props.transform : {}" v-slot="{ rotate, flipHorizontal, flipVertical, currentTransform }">
-                <div class="space-y-2">
-                  <h3 class="text-[10px] font-bold uppercase tracking-widest text-muted px-1">
-                    Transform
-                  </h3>
-                  <div class="grid grid-cols-4 gap-2">
-                    <UButton icon="i-lucide-rotate-ccw" color="neutral" variant="subtle" title="Rotate -90" @click="rotate(-90)" />
-                    <UButton icon="i-lucide-rotate-cw" color="neutral" variant="subtle" title="Rotate +90" @click="rotate(90)" />
-                    <UButton icon="i-lucide-flip-horizontal" :color="currentTransform.flipHorizontal ? 'primary' : 'neutral'" variant="subtle" title="Flip X" @click="flipHorizontal" />
-                    <UButton icon="i-lucide-flip-vertical" :color="currentTransform.flipVertical ? 'primary' : 'neutral'" variant="subtle" title="Flip Y" @click="flipVertical" />
-                  </div>
-                </div>
-              </ImgTransform>
+              <ImgTransform v-if="props.transform" key="transform" v-bind="typeof props.transform === 'object' ? props.transform : {}" />
             </slot>
 
             <slot name="resize" :editor="editorAPI" :resize-props="typeof props.resize === 'object' ? props.resize : {}">
-              <ImgResize v-if="props.resize" key="resize" v-bind="typeof props.resize === 'object' ? props.resize : {}" v-slot="{ applyResize }">
-                <div class="space-y-2">
-                  <h3 class="text-[10px] font-bold uppercase tracking-widest text-muted px-1">
-                    Quick Sizes
-                  </h3>
-                  <div class="grid grid-cols-3 gap-1">
-                    <template v-if="typeof props.resize === 'object' && props.resize.presets">
-                      <UButton
-                        v-for="preset in props.resize.presets"
-                        :key="preset.label"
-                        :label="preset.label"
-                        size="xs"
-                        color="neutral"
-                        variant="subtle"
-                        @click="applyResize(preset.width, preset.height)" />
-                    </template>
-                    <template v-else>
-                      <UButton label="SD" size="xs" color="neutral" variant="subtle" @click="applyResize(800, 600)" />
-                      <UButton label="HD" size="xs" color="neutral" variant="subtle" @click="applyResize(1280, 720)" />
-                      <UButton label="FHD" size="xs" color="neutral" variant="subtle" @click="applyResize(1920, 1080)" />
-                    </template>
-                  </div>
-                </div>
-              </ImgResize>
+              <ImgResize v-if="props.resize" key="resize" v-bind="typeof props.resize === 'object' ? props.resize : {}" />
             </slot>
 
             <!-- Filter -->
             <slot name="filter" :editor="editorAPI" :filter-props="typeof props.filter === 'object' ? props.filter : {}">
-              <ImgFilter v-if="props.filter" key="filter" v-bind="typeof props.filter === 'object' ? props.filter : {}" v-slot="{ applyFilter, currentFilters, resetFilters }">
-                <div class="space-y-4 pt-2">
-                  <div class="flex items-center justify-between px-1">
-                    <h3 class="text-[10px] font-bold uppercase tracking-widest text-muted">
-                      Filters &amp; Effects
-                    </h3>
-                    <UButton
-                      label="Reset Filters"
-                      variant="subtle"
-                      color="error"
-                      size="xs"
-                      icon="i-lucide-rotate-ccw"
-                      @click="resetFilters" />
-                  </div>
-
-                  <!-- Presets Gallery -->
-                  <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide px-1">
-                    <UButton
-                      v-for="preset in PRESET_FILTERS"
-                      :key="preset.id"
-                      :icon="preset.id === 'none' ? 'i-lucide-image' : 'i-lucide-sparkles'"
-                      :label="preset.label"
-                      :variant="currentFilters.lastPreset === preset.id ? 'solid' : 'subtle'"
-                      :color="currentFilters.lastPreset === preset.id ? 'primary' : 'neutral'"
-                      @click="preset.id === 'none' ? (resetFilters(), currentFilters.lastPreset = 'none') : (applyFilter(preset.preset), currentFilters.lastPreset = preset.id)" />
-                  </div>
-
-                  <UAccordion
-                    multiple
-                    :items="[
-                      { label: 'Basic', icon: 'i-lucide-sliders', slot: 'basic', defaultOpen: true },
-                      { label: 'Color', icon: 'i-lucide-palette', slot: 'color' },
-                      { label: 'Light', icon: 'i-lucide-sun', slot: 'light' },
-                      { label: 'Detail', icon: 'i-lucide-zap', slot: 'detail' },
-                    ]"
-                    :ui="{
-                      trigger: 'px-3 py-2 text-[10px] font-bold uppercase tracking-widest',
-                    }">
-                    <template #basic>
-                      <div class="p-3 space-y-4">
-                        <div>
-                          <div class="flex justify-between text-[10px] text-muted mb-2 uppercase font-medium">
-                            <span>Brightness</span>
-                            <span class="text-primary-500">{{ currentFilters.brightness }}%</span>
-                          </div>
-                          <USlider v-model="currentFilters.brightness" :min="0" :max="200" size="sm" @update:model-value="applyFilter({ brightness: $event })" />
-                        </div>
-                        <div>
-                          <div class="flex justify-between text-[10px] text-muted mb-2 uppercase font-medium">
-                            <span>Contrast</span>
-                            <span class="text-primary-500">{{ currentFilters.contrast }}%</span>
-                          </div>
-                          <USlider v-model="currentFilters.contrast" :min="0" :max="200" size="sm" @update:model-value="applyFilter({ contrast: $event })" />
-                        </div>
-                        <div>
-                          <div class="flex justify-between text-[10px] text-muted mb-2 uppercase font-medium">
-                            <span>Saturation</span>
-                            <span class="text-primary-500">{{ currentFilters.saturate }}%</span>
-                          </div>
-                          <USlider v-model="currentFilters.saturate" :min="0" :max="200" size="sm" @update:model-value="applyFilter({ saturate: $event })" />
-                        </div>
-                      </div>
-                    </template>
-                    <template #color>
-                      <div class="p-3 space-y-4">
-                        <div>
-                          <div class="flex justify-between text-[10px] text-muted mb-2 uppercase font-medium">
-                            <span>Temperature</span>
-                            <span class="text-primary-500">{{ (currentFilters.temperature || 0) > 0 ? 'Warm' : 'Cool' }} ({{ currentFilters.temperature }})</span>
-                          </div>
-                          <USlider v-model="currentFilters.temperature" :min="-100" :max="100" size="sm" @update:model-value="applyFilter({ temperature: $event })" />
-                        </div>
-                        <div>
-                          <div class="flex justify-between text-[10px] text-muted mb-2 uppercase font-medium">
-                            <span>Tint</span>
-                            <span class="text-primary-500">{{ currentFilters.tint }}</span>
-                          </div>
-                          <USlider v-model="currentFilters.tint" :min="-100" :max="100" size="sm" @update:model-value="applyFilter({ tint: $event })" />
-                        </div>
-                        <div>
-                          <div class="flex justify-between text-[10px] text-muted mb-2 uppercase font-medium">
-                            <span>Vibrance</span>
-                            <span class="text-primary-500">{{ currentFilters.vibrance }}</span>
-                          </div>
-                          <USlider v-model="currentFilters.vibrance" :min="-100" :max="100" size="sm" @update:model-value="applyFilter({ vibrance: $event })" />
-                        </div>
-                        <div>
-                          <div class="flex justify-between text-[10px] text-muted mb-2 uppercase font-medium">
-                            <span>Hue Rotate</span>
-                            <span class="text-primary-500">{{ currentFilters.hueRotate }}°</span>
-                          </div>
-                          <USlider v-model="currentFilters.hueRotate" :min="0" :max="360" size="sm" @update:model-value="applyFilter({ hueRotate: $event })" />
-                        </div>
-                      </div>
-                    </template>
-
-                    <template #light>
-                      <div class="p-3 space-y-4">
-                        <div>
-                          <div class="flex justify-between text-[10px] text-muted mb-2 uppercase font-medium">
-                            <span>Exposure</span>
-                            <span class="text-primary-500">{{ currentFilters.exposure }}</span>
-                          </div>
-                          <USlider v-model="currentFilters.exposure" :min="-100" :max="100" size="sm" @update:model-value="applyFilter({ exposure: $event })" />
-                        </div>
-                        <div>
-                          <div class="flex justify-between text-[10px] text-muted mb-2 uppercase font-medium">
-                            <span>Highlights</span>
-                            <span class="text-primary-500">{{ currentFilters.highlights }}</span>
-                          </div>
-                          <USlider v-model="currentFilters.highlights" :min="-100" :max="100" size="sm" @update:model-value="applyFilter({ highlights: $event })" />
-                        </div>
-                        <div>
-                          <div class="flex justify-between text-[10px] text-muted mb-2 uppercase font-medium">
-                            <span>Shadows</span>
-                            <span class="text-primary-500">{{ currentFilters.shadows }}</span>
-                          </div>
-                          <USlider v-model="currentFilters.shadows" :min="-100" :max="100" size="sm" @update:model-value="applyFilter({ shadows: $event })" />
-                        </div>
-                        <div class="grid grid-cols-2 gap-3">
-                          <div>
-                            <div class="flex justify-between text-[10px] text-muted mb-2 uppercase font-medium">
-                              <span>Whites</span>
-                            </div>
-                            <USlider v-model="currentFilters.whites" :min="-100" :max="100" size="sm" @update:model-value="applyFilter({ whites: $event })" />
-                          </div>
-                          <div>
-                            <div class="flex justify-between text-[10px] text-muted mb-2 uppercase font-medium">
-                              <span>Blacks</span>
-                            </div>
-                            <USlider v-model="currentFilters.blacks" :min="-100" :max="100" size="sm" @update:model-value="applyFilter({ blacks: $event })" />
-                          </div>
-                        </div>
-                      </div>
-                    </template>
-
-                    <template #detail>
-                      <div class="p-3 space-y-4">
-                        <div>
-                          <div class="flex justify-between text-[10px] text-muted mb-2 uppercase font-medium">
-                            <span>Clarity</span>
-                            <span class="text-primary-500">{{ currentFilters.clarity }}</span>
-                          </div>
-                          <USlider v-model="currentFilters.clarity" :min="-100" :max="100" size="sm" @update:model-value="applyFilter({ clarity: $event })" />
-                        </div>
-                        <div>
-                          <div class="flex justify-between text-[10px] text-muted mb-2 uppercase font-medium">
-                            <span>Sharpen</span>
-                            <span class="text-primary-500">{{ currentFilters.sharpen }}</span>
-                          </div>
-                          <USlider v-model="currentFilters.sharpen" :min="0" :max="100" size="sm" @update:model-value="applyFilter({ sharpen: $event })" />
-                        </div>
-                      </div>
-                    </template>
-                  </UAccordion>
-                </div>
-              </ImgFilter>
+              <ImgFilter v-if="props.filter" key="filter" v-bind="typeof props.filter === 'object' ? props.filter : {}" />
             </slot>
 
             <!-- Custom User Slot Content -->

@@ -1,12 +1,29 @@
-<script lang="ts" setup>
+<script lang="ts">
+import { ref, onUnmounted, computed } from 'vue'
 import { useEventListener } from '@vueuse/core'
+import type { AppConfig } from '@nuxt/schema'
+import theme from '../utils/themes/img-compare'
+import type { ComponentConfig } from '../types/tv'
+import { tv } from '../utils/tv'
+import type { StudioAppConfig } from '../types/studio'
 
-defineProps<{
+export type StudioCompare = ComponentConfig<typeof theme, AppConfig, 'studio'>
+
+export interface StudioCompareProps {
   before: string
   after: string
   beforeLabel?: string
   afterLabel?: string
-}>()
+  ui?: StudioCompare['slots']
+}
+</script>
+
+<script setup lang="ts">
+const appConfig = useAppConfig() as StudioAppConfig
+
+const props = defineProps<StudioCompareProps>()
+
+const resUI = computed(() => tv({ extend: tv(theme), ...(appConfig.ui?.compare || {}) })(props.ui))
 
 const sliderPosition = ref(50)
 const containerRef = ref<HTMLElement | null>(null)
@@ -64,63 +81,61 @@ onUnmounted(cleanup)
 <template>
   <div
     ref="containerRef"
-    class="relative w-full h-full overflow-hidden select-none group rounded-lg">
+    :class="resUI.root()">
     <!-- After Image (Background) -->
     <img
       :src="after"
-      class="absolute inset-0 w-full h-full object-contain pointer-events-none"
+      :class="resUI.afterImage()"
       alt="After">
 
     <!-- Before Image (Overlay) -->
     <div
-      class="absolute inset-0 w-full h-full overflow-hidden pointer-events-none"
+      :class="resUI.beforeWrapper()"
       :style="{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }">
       <img
         :src="before"
-        class="absolute inset-0 w-full h-full object-contain pointer-events-none"
+        :class="resUI.beforeImage()"
         alt="Before">
     </div>
 
     <!-- Slider Divider & Hit Area -->
     <div
-      class="absolute inset-y-0 z-20 w-10 -ml-5 cursor-ew-resize touch-none flex flex-col items-center group-hover:opacity-100 transition-opacity"
+      :class="resUI.slider()"
       :style="{ left: `${sliderPosition}%` }"
       @pointerdown="startDragging">
       <!-- Visual Line -->
-      <div class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-0.5 bg-white/50 backdrop-blur-sm" />
+      <div :class="resUI.divider()" />
 
       <!-- Visual Handle -->
-      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center border-4 border-primary z-30 transition-transform group-hover:scale-110 active:scale-95">
-        <div class="flex gap-0.5 pointer-events-none">
-          <div class="w-0.5 h-3 bg-primary rounded-full" />
-          <div class="w-0.5 h-3 bg-primary rounded-full" />
+      <div :class="resUI.handle()">
+        <div :class="resUI.handleIcon()">
+          <div :class="resUI.handleBar()" />
+          <div :class="resUI.handleBar()" />
         </div>
       </div>
     </div>
 
     <!-- Labels (Click-through) -->
-    <div class="absolute top-4 left-4 z-30 pointer-events-none">
+    <div v-if="beforeLabel" :class="resUI.labelBefore()">
       <UBadge
-        v-if="beforeLabel"
         color="neutral"
         variant="solid"
-        class="backdrop-blur-md bg-black/40 text-white border-none text-[10px] uppercase tracking-wider">
+        :class="resUI.badge()">
         {{ beforeLabel }}
       </UBadge>
     </div>
-    <div class="absolute top-4 right-4 z-30 pointer-events-none">
+    <div v-if="afterLabel" :class="resUI.labelAfter()">
       <UBadge
-        v-if="afterLabel"
         color="primary"
         variant="solid"
-        class="backdrop-blur-md bg-primary/80 text-white border-none text-[10px] uppercase tracking-wider">
+        :class="resUI.badge()">
         {{ afterLabel }}
       </UBadge>
     </div>
 
     <!-- Hover Hint -->
-    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-      <div class="px-3 py-1 bg-black/60 backdrop-blur-md text-white rounded-full text-[10px] font-medium">
+    <div :class="resUI.hintWrapper()">
+      <div :class="resUI.hint()">
         Drag slider to compare
       </div>
     </div>

@@ -1,11 +1,28 @@
-<script setup lang="ts">
-import { ref, inject } from 'vue'
+<script lang="ts">
+import { ref, inject, computed } from 'vue'
+import type { AppConfig } from '@nuxt/schema'
+import theme from '../utils/themes/img-transform'
+import type { ComponentConfig } from '../types/tv'
 import type { ImageEditorContext, TransformState } from '../types/editor'
-import type { StudioTransformProps } from './ImgStudio.vue'
+import { tv } from '../utils/tv'
+import type { StudioAppConfig } from '../types/studio'
+
+export type StudioTransform = ComponentConfig<typeof theme, AppConfig, 'studio'>
+
+export interface StudioTransformProps {
+  headless?: boolean
+  ui?: StudioTransform['slots']
+}
+</script>
+
+<script setup lang="ts">
+const appConfig = useAppConfig() as StudioAppConfig
 
 const props = defineProps<StudioTransformProps>()
 
 const imgStudio = inject<ImageEditorContext>('imgStudio')
+
+const resUI = computed(() => tv({ extend: tv(theme), ...(appConfig.ui?.transform || {}) })(props.ui))
 
 const currentTransform = ref<TransformState>({
   rotation: 0,
@@ -41,8 +58,6 @@ const applyTransform = (angle = 0, h = false, v = false) => {
   tempCtx.drawImage(canvas, -canvas.width / 2, -canvas.height / 2)
   tempCtx.restore()
 
-  // Optimization: Pass the canvas directly instead of generating
-  // a blocking data URL on the main thread
   imgStudio?.commit(tempCanvas, 'transform')
   imgStudio?.resetZoom()
 }
@@ -60,8 +75,7 @@ const flipVertical = () => {
 }
 
 const resetTransform = () => {
-  // For transforms, reset could mean undoing the last transform
-  // but usually it's better to just provide rotate/flip as one-shot actions
+  // Logic could be added here if needed
 }
 
 defineExpose({
@@ -74,12 +88,48 @@ defineExpose({
 </script>
 
 <template>
-  <div class="u-img-transform">
+  <div :class="resUI.root()">
     <slot
       :rotate="rotate"
       :flip-horizontal="flipHorizontal"
       :flip-vertical="flipVertical"
       :reset-transform="resetTransform"
-      :current-transform="currentTransform" />
+      :current-transform="currentTransform">
+      <div v-if="!props.headless" :class="resUI.header()">
+        <h3 :class="resUI.title()">
+          Transform
+        </h3>
+      </div>
+      <div v-if="!props.headless" :class="resUI.grid()">
+        <UButton
+          icon="i-lucide-rotate-ccw"
+          color="neutral"
+          variant="subtle"
+          title="Rotate -90"
+          :class="resUI.button()"
+          @click="rotate(-90)" />
+        <UButton
+          icon="i-lucide-rotate-cw"
+          color="neutral"
+          variant="subtle"
+          title="Rotate +90"
+          :class="resUI.button()"
+          @click="rotate(90)" />
+        <UButton
+          icon="i-lucide-flip-horizontal"
+          :color="currentTransform.flipHorizontal ? 'primary' : 'neutral'"
+          variant="subtle"
+          title="Flip X"
+          :class="resUI.button()"
+          @click="flipHorizontal" />
+        <UButton
+          icon="i-lucide-flip-vertical"
+          :color="currentTransform.flipVertical ? 'primary' : 'neutral'"
+          variant="subtle"
+          title="Flip Y"
+          :class="resUI.button()"
+          @click="flipVertical" />
+      </div>
+    </slot>
   </div>
 </template>

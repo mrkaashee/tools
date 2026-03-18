@@ -1,13 +1,26 @@
-<script lang="ts" setup>
-import { toRefs, ref, onMounted, onUnmounted, watch, inject } from 'vue'
+<script lang="ts">
+import { toRefs, ref, onMounted, onUnmounted, watch, inject, computed } from 'vue'
 import { useResizeObserver, useEventListener } from '@vueuse/core'
+import type { AppConfig } from '@nuxt/schema'
+import theme from '../utils/themes/img-drawing'
+import type { ComponentConfig } from '../types/tv'
 import type { ImageEditorContext } from '../types/editor'
 import type { ImgDrawingProps, ImgDrawingEmits } from '../types/drawing'
 import { useDrawing } from '../composables/useDrawing'
 import { useDrawingTools } from '../composables/useDrawingTools'
 import { useDrawingHistory } from '../composables/useDrawingHistory'
 import { normalizeInputEvent } from '../utils/inputHandler'
+import { tv } from '../utils/tv'
+import { useAppConfig } from '#imports'
 
+export type StudioDrawing = ComponentConfig<typeof theme, AppConfig, 'drawing'>
+
+export interface StudioDrawingProps extends ImgDrawingProps {
+  ui?: StudioDrawing['slots']
+}
+</script>
+
+<script lang="ts" setup>
 /**
  * ImgDrawing Component
  *
@@ -15,7 +28,9 @@ import { normalizeInputEvent } from '../utils/inputHandler'
  * Uses dual-canvas strategy (base + overlay) for optimal performance.
  */
 
-const props = withDefaults(defineProps<ImgDrawingProps>(), {
+const appConfig = useAppConfig() as StudioDrawing['AppConfig']
+
+const props = withDefaults(defineProps<StudioDrawingProps>(), {
   enableBrush: true,
   enableShapes: true,
   enableEraser: true,
@@ -27,6 +42,10 @@ const props = withDefaults(defineProps<ImgDrawingProps>(), {
 })
 
 const imgStudio = inject<ImageEditorContext>('imgStudio')
+
+const resUI = computed(() => tv({ extend: tv(theme), ...(appConfig.ui?.drawing || {}) })({
+  ...props.ui,
+}))
 
 // Destructure for template usage
 const { enableBrush, enableShapes, enableEraser } = toRefs(props)
@@ -389,11 +408,11 @@ defineExpose({
 </script>
 
 <template>
-  <div class="relative w-full h-full flex flex-col">
+  <div :class="resUI.root()">
     <!-- Drawing Controls Panel -->
-    <div v-if="isActive" class="flex gap-4 p-2 bg-elevated border-b border-muted flex-wrap items-center z-20">
+    <div v-if="isActive" :class="resUI.controls()">
       <!-- Tool Selector -->
-      <div class="flex gap-1">
+      <div :class="resUI.toolGroup()">
         <UButton
           v-if="enableBrush"
           icon="i-lucide-pencil"
@@ -439,16 +458,16 @@ defineExpose({
       </div>
 
       <!-- Drawing Properties -->
-      <div class="flex gap-4 flex-1 flex-wrap min-w-0">
-        <div class="flex items-center gap-2">
-          <label class="text-[10px] uppercase font-bold text-muted whitespace-nowrap tracking-tight">Color</label>
+      <div :class="resUI.properties()">
+        <div :class="resUI.propertyItem()">
+          <label :class="resUI.propertyLabel()">Color</label>
           <input
             v-model="drawing.properties.value.strokeColor"
             type="color"
-            class="w-8 h-8 rounded border border-muted cursor-pointer p-0 overflow-hidden">
+            :class="resUI.propertyInput()">
         </div>
-        <div class="flex items-center gap-2 flex-1 min-w-30">
-          <label class="text-[10px] uppercase font-bold text-muted whitespace-nowrap tracking-tight">Width: {{ drawing.properties.value.strokeWidth }}</label>
+        <div :class="resUI.propertyItem() + ' ' + resUI.propertySlider()">
+          <label :class="resUI.propertyLabel()">Width: {{ drawing.properties.value.strokeWidth }}</label>
           <USlider
             v-model="drawing.properties.value.strokeWidth"
             :min="1"
@@ -456,8 +475,8 @@ defineExpose({
             size="sm"
             class="flex-1" />
         </div>
-        <div class="flex items-center gap-2 flex-1 min-w-30">
-          <label class="text-[10px] uppercase font-bold text-muted whitespace-nowrap tracking-tight">Opacity: {{ drawing.properties.value.opacity }}%</label>
+        <div :class="resUI.propertyItem() + ' ' + resUI.propertySlider()">
+          <label :class="resUI.propertyLabel()">Opacity: {{ drawing.properties.value.opacity }}%</label>
           <USlider
             v-model="drawing.properties.value.opacity"
             :min="0"
@@ -465,7 +484,7 @@ defineExpose({
             size="sm"
             class="flex-1" />
         </div>
-        <div class="flex items-center gap-2">
+        <div :class="resUI.propertyItem()">
           <UCheckbox
             v-model="drawing.properties.value.enableFill"
             label="Fill"
@@ -474,12 +493,12 @@ defineExpose({
             v-if="drawing.properties.value.enableFill"
             v-model="drawing.properties.value.fillColor"
             type="color"
-            class="w-6 h-6 rounded border border-muted cursor-pointer p-0">
+            :class="resUI.propertyInput()">
         </div>
       </div>
 
       <!-- Undo/Redo Controls -->
-      <div class="flex gap-1">
+      <div :class="resUI.historyGroup()">
         <UButton
           icon="i-lucide-undo-2"
           color="neutral"
@@ -500,13 +519,13 @@ defineExpose({
     <!-- Canvas Container -->
     <div
       ref="containerRef"
-      class="relative flex-1 overflow-hidden bg-muted">
+      :class="resUI.canvasContainer()">
       <canvas
         ref="baseCanvasRef"
-        class="absolute inset-0 w-full h-full z-10" />
+        :class="resUI.baseCanvas()" />
       <canvas
         ref="overlayCanvasRef"
-        class="absolute inset-0 w-full h-full z-20 pointer-events-none" />
+        :class="resUI.overlayCanvas()" />
     </div>
   </div>
 </template>

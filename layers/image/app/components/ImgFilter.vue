@@ -1,11 +1,38 @@
-<script setup lang="ts">
-import { ref, inject, watch, onUnmounted } from 'vue'
+<script lang="ts">
+import { ref, inject, watch, onUnmounted, computed } from 'vue'
+import type { AppConfig } from '@nuxt/schema'
+import theme from '../utils/themes/img-filter'
+import type { ComponentConfig } from '../types/tv'
 import type { ImageEditorContext, FilterOptions } from '../types/editor'
-import type { StudioFilterProps } from './ImgStudio.vue'
+import { tv } from '../utils/tv'
+import type { StudioAppConfig } from '../types/studio'
+
+export type StudioFilter = ComponentConfig<typeof theme, AppConfig, 'studio'>
+
+export interface StudioFilterProps {
+  headless?: boolean
+  ui?: StudioFilter['slots']
+}
+
+export const PRESET_FILTERS = [
+  { id: 'none', label: 'Original', preset: {} },
+  { id: 'vivid', label: 'Vivid', preset: { saturate: 150, contrast: 110, brightness: 105 } },
+  { id: 'mono', label: 'B&W', preset: { grayscale: 100, contrast: 120 } },
+  { id: 'warm', label: 'Warm', preset: { sepia: 30, saturate: 120, temperature: 20 } },
+  { id: 'cool', label: 'Cool', preset: { hueRotate: 10, saturate: 90, temperature: -20 } },
+  { id: 'dramatic', label: 'Dramatic', preset: { contrast: 150, brightness: 90, exposure: -10 } },
+  { id: 'fade', label: 'Fade', preset: { brightness: 110, contrast: 85, saturate: 80, blacks: 20 } },
+]
+</script>
+
+<script setup lang="ts">
+const appConfig = useAppConfig() as StudioAppConfig
 
 const props = defineProps<StudioFilterProps>()
 
 const imgStudio = inject<ImageEditorContext>('imgStudio')
+
+const resUI = computed(() => tv({ extend: tv(theme), ...(appConfig.ui?.filter || {}) })(props.ui))
 
 const currentFilters = ref<FilterOptions>({
   brightness: 100,
@@ -25,6 +52,7 @@ const currentFilters = ref<FilterOptions>({
   whites: 0,
   blacks: 0,
   sharpen: 0,
+  lastPreset: 'none',
 })
 
 // Snapshot of the image BEFORE adjustment starts
@@ -168,6 +196,7 @@ const resetFilters = async () => {
     whites: 0,
     blacks: 0,
     sharpen: 0,
+    lastPreset: 'none',
   }
 
   // Cancel any pending debounced bake
@@ -180,8 +209,6 @@ const resetFilters = async () => {
   if (imgStudio) imgStudio.canvasPreviewStyle.value = {}
 
   // Reload the canvas from the last committed snapshot.
-  // Non-committing bakeFilters(false) calls never update imageState.current,
-  // so reloading it discards any baked preview pixels without touching history.
   const lastCommitted = imgStudio?.imageState.value.current
   if (lastCommitted && imgStudio) {
     await imgStudio.loadImage(lastCommitted, true, true)
@@ -200,7 +227,187 @@ defineExpose({
 </script>
 
 <template>
-  <div class="u-img-filter">
-    <slot :apply-filter="applyFilter" :reset-filters="resetFilters" :current-filters="currentFilters" />
+  <div :class="resUI.root()">
+    <slot :apply-filter="applyFilter" :reset-filters="resetFilters" :current-filters="currentFilters">
+      <div v-if="!props.headless" :class="resUI.header()">
+        <h3 :class="resUI.title()">
+          Filters &amp; Effects
+        </h3>
+        <UButton
+          label="Reset"
+          variant="subtle"
+          color="error"
+          size="xs"
+          icon="i-lucide-rotate-ccw"
+          :class="resUI.resetButton()"
+          @click="resetFilters" />
+      </div>
+
+      <!-- Presets Gallery -->
+      <div v-if="!props.headless" :class="resUI.presets()">
+        <UButton
+          v-for="preset in PRESET_FILTERS"
+          :key="preset.id"
+          :icon="preset.id === 'none' ? 'i-lucide-image' : 'i-lucide-sparkles'"
+          :label="preset.label"
+          :variant="currentFilters.lastPreset === preset.id ? 'solid' : 'subtle'"
+          :color="currentFilters.lastPreset === preset.id ? 'primary' : 'neutral'"
+          size="xs"
+          :class="resUI.preset()"
+          @click="preset.id === 'none' ? (resetFilters(), currentFilters.lastPreset = 'none') : (applyFilter(preset.preset), currentFilters.lastPreset = preset.id)" />
+      </div>
+
+      <UAccordion
+        v-if="!props.headless"
+        multiple
+        :class="resUI.accordion()"
+        :items="[
+          { label: 'Professional Controls', icon: 'i-lucide-settings-2', slot: 'pro' },
+        ]">
+        <template #basic>
+          <div :class="resUI.control()">
+            <div :class="resUI.controlHeader()">
+              <span :class="resUI.controlLabel()">Brightness</span>
+              <span :class="resUI.controlValue()">{{ currentFilters.brightness }}%</span>
+            </div>
+            <USlider
+              v-model="currentFilters.brightness"
+              :min="0"
+              :max="200"
+              :step="1"
+              :class="resUI.slider()"
+              @update:model-value="applyFilter({})" />
+
+            <div :class="resUI.controlHeader()">
+              <span :class="resUI.controlLabel()">Contrast</span>
+              <span :class="resUI.controlValue()">{{ currentFilters.contrast }}%</span>
+            </div>
+            <USlider
+              v-model="currentFilters.contrast"
+              :min="0"
+              :max="200"
+              :step="1"
+              :class="resUI.slider()"
+              @update:model-value="applyFilter({})" />
+
+            <div :class="resUI.controlHeader()">
+              <span :class="resUI.controlLabel()">Saturation</span>
+              <span :class="resUI.controlValue()">{{ currentFilters.saturate }}%</span>
+            </div>
+            <USlider
+              v-model="currentFilters.saturate"
+              :min="0"
+              :max="200"
+              :step="1"
+              :class="resUI.slider()"
+              @update:model-value="applyFilter({})" />
+
+            <div :class="resUI.controlHeader()">
+              <span :class="resUI.controlLabel()">Blur</span>
+              <span :class="resUI.controlValue()">{{ currentFilters.blur }}px</span>
+            </div>
+            <USlider
+              v-model="currentFilters.blur"
+              :min="0"
+              :max="20"
+              :step="0.1"
+              :class="resUI.slider()"
+              @update:model-value="applyFilter({})" />
+          </div>
+        </template>
+
+        <template #color>
+          <div :class="resUI.control()">
+            <div :class="resUI.controlHeader()">
+              <span :class="resUI.controlLabel()">Temperature</span>
+              <span :class="resUI.controlValue()">{{ currentFilters.temperature }}%</span>
+            </div>
+            <USlider
+              v-model="currentFilters.temperature"
+              :min="-100"
+              :max="100"
+              :step="1"
+              :class="resUI.slider()"
+              @update:model-value="applyFilter({})" />
+
+            <div :class="resUI.controlHeader()">
+              <span :class="resUI.controlLabel()">Tint</span>
+              <span :class="resUI.controlValue()">{{ currentFilters.tint }}%</span>
+            </div>
+            <USlider
+              v-model="currentFilters.tint"
+              :min="-100"
+              :max="100"
+              :step="1"
+              :class="resUI.slider()"
+              @update:model-value="applyFilter({})" />
+
+            <div :class="resUI.controlHeader()">
+              <span :class="resUI.controlLabel()">Vibrance</span>
+              <span :class="resUI.controlValue()">{{ currentFilters.vibrance }}%</span>
+            </div>
+            <USlider
+              v-model="currentFilters.vibrance"
+              :min="-100"
+              :max="100"
+              :step="1"
+              :class="resUI.slider()"
+              @update:model-value="applyFilter({})" />
+          </div>
+        </template>
+
+        <template #pro>
+          <div :class="resUI.control()">
+            <div :class="resUI.controlHeader()">
+              <span :class="resUI.controlLabel()">Exposure</span>
+              <span :class="resUI.controlValue()">{{ currentFilters.exposure }}%</span>
+            </div>
+            <USlider
+              v-model="currentFilters.exposure"
+              :min="-100"
+              :max="100"
+              :step="1"
+              :class="resUI.slider()"
+              @update:model-value="applyFilter({})" />
+
+            <div :class="resUI.controlHeader()">
+              <span :class="resUI.controlLabel()">Highlights</span>
+              <span :class="resUI.controlValue()">{{ currentFilters.highlights }}%</span>
+            </div>
+            <USlider
+              v-model="currentFilters.highlights"
+              :min="-100"
+              :max="100"
+              :step="1"
+              :class="resUI.slider()"
+              @update:model-value="applyFilter({})" />
+
+            <div :class="resUI.controlHeader()">
+              <span :class="resUI.controlLabel()">Shadows</span>
+              <span :class="resUI.controlValue()">{{ currentFilters.shadows }}%</span>
+            </div>
+            <USlider
+              v-model="currentFilters.shadows"
+              :min="-100"
+              :max="100"
+              :step="1"
+              :class="resUI.slider()"
+              @update:model-value="applyFilter({})" />
+
+            <div :class="resUI.controlHeader()">
+              <span :class="resUI.controlLabel()">Clarity</span>
+              <span :class="resUI.controlValue()">{{ currentFilters.clarity }}%</span>
+            </div>
+            <USlider
+              v-model="currentFilters.clarity"
+              :min="-100"
+              :max="100"
+              :step="1"
+              :class="resUI.slider()"
+              @update:model-value="applyFilter({})" />
+          </div>
+        </template>
+      </UAccordion>
+    </slot>
   </div>
 </template>

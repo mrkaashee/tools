@@ -1,12 +1,34 @@
-<script setup lang="ts">
+<script lang="ts">
 import { inject, computed } from 'vue'
+import type { AppConfig } from '@nuxt/schema'
+import theme from '../utils/themes/img-handler'
+import type { ComponentConfig } from '../types/tv'
 import type { ImageEditorContext } from '../types/editor'
-import type { StudioHandlerProps as ImgHandlerProps } from './ImgStudio.vue'
+import { tv } from '../utils/tv'
+import { useAppConfig } from '#imports'
+
+export type StudioHandler = ComponentConfig<typeof theme, AppConfig, 'handler'>
+
+export interface ImgHandlerProps {
+  position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'top' | 'bottom' | 'left' | 'right'
+  active?: boolean
+  ui?: StudioHandler['slots']
+}
+</script>
+
+<script setup lang="ts">
+const appConfig = useAppConfig() as StudioHandler['AppConfig']
 
 const props = defineProps<ImgHandlerProps>()
 
 const imgStudio = inject<ImageEditorContext>('imgStudio')
 const handlerCfg = computed(() => imgStudio?.handlerCfg?.value ?? null)
+
+const resUI = computed(() => tv({ extend: tv(theme), ...(appConfig.ui?.handler || {}) })({
+  position: props.position,
+  size: (handlerCfg.value?.size) || 'md',
+  ...props.ui,
+}))
 
 const cursorMap = {
   'top-left': 'nw-resize',
@@ -18,25 +40,6 @@ const cursorMap = {
   left: 'w-resize',
   right: 'e-resize',
 }
-
-const posClasses = {
-  'top-left': '-top-3 -left-3',
-  'top-right': '-top-3 -right-3',
-  'bottom-left': '-bottom-3 -left-3',
-  'bottom-right': '-bottom-3 -right-3',
-  top: '-top-3 left-1/2 -translate-x-1/2',
-  bottom: '-bottom-3 left-1/2 -translate-x-1/2',
-  left: '-left-3 top-1/2 -translate-y-1/2',
-  right: '-right-3 top-1/2 -translate-y-1/2',
-}
-
-const sizeClasses = {
-  sm: 'w-2 h-2',
-  md: 'w-2.5 h-2.5',
-  lg: 'w-3.5 h-3.5',
-}
-
-const dotSizeClass = computed(() => sizeClasses[handlerCfg.value?.size ?? 'md'])
 
 const dotStyle = computed(() => {
   const cfg = handlerCfg.value
@@ -50,20 +53,14 @@ const dotStyle = computed(() => {
 
 <template>
   <div
-    class="absolute w-6 h-6 flex items-center justify-center pointer-events-auto z-50 hover:scale-110"
-    :class="[posClasses[position], { 'group is-active': active }, handlerCfg?.class]"
-    :style="{ cursor: cursorMap[position] }">
+    :class="[resUI.root(), { 'group is-active': props.active }, handlerCfg?.class]"
+    :style="{ cursor: cursorMap[props.position] }">
     <!-- Inner Dot -->
     <div
-      :class="['rounded-xs border-[1.5px] border-inverted relative z-10 shadow-sm',
-               'group-hover:bg-primary group-hover:border-white group-hover:rounded-full',
-               '[.group.is-active_&]:bg-primary [.group.is-active_&]:border-white [.group.is-active_&]:shadow-[0_0_10_rgba(var(--color-primary-500),0.5)]',
-               dotSizeClass, handlerCfg?.color ? '' : 'bg-white']"
+      :class="[resUI.dot(), handlerCfg?.color ? '' : 'bg-primary border-white shadow-md shadow-primary/20']"
       :style="dotStyle" />
 
     <!-- Glow Effect -->
-    <div
-      class="absolute inset-0 bg-[radial-gradient(circle,--theme(--color-primary-500/0.4)_0%,transparent_70%)] opacity-0 pointer-events-none
-             group-hover:opacity-100" />
+    <div :class="resUI.glow()" />
   </div>
 </template>

@@ -115,6 +115,7 @@ export interface ImageEditorContext {
   hasImage: ComputedRef<boolean> | Ref<boolean>
   isWorkerProcessing: Ref<boolean>
   processImage: (imageData: ImageData, settings: any) => Promise<ImageData>
+  triggerFileInput: () => void
   /** Handler (resize dot) configuration passed down from :handler prop on ImgStudio */
   handlerCfg?: ComputedRef<any>
 }
@@ -127,23 +128,23 @@ export interface HistoryState {
 }
 
 export interface FilterOptions {
-  brightness: number
-  contrast: number
-  saturate: number
-  blur: number
-  grayscale: number
-  sepia: number
-  hueRotate: number
-  exposure: number
-  highlights: number
-  shadows: number
-  vibrance: number
-  clarity: number
-  temperature: number
-  tint: number
-  whites: number
-  blacks: number
-  sharpen: number
+  brightness?: number
+  contrast?: number
+  saturate?: number
+  blur?: number
+  grayscale?: number
+  sepia?: number
+  hueRotate?: number
+  exposure?: number
+  highlights?: number
+  shadows?: number
+  vibrance?: number
+  clarity?: number
+  temperature?: number
+  tint?: number
+  whites?: number
+  blacks?: number
+  sharpen?: number
   lastPreset?: string
 }
 

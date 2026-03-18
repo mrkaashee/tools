@@ -1,12 +1,28 @@
-```
-<script setup lang="ts">
+<script lang="ts">
 import { inject, computed } from 'vue'
+import type { AppConfig } from '@nuxt/schema'
+import theme from '../utils/themes/img-layer-manager'
+import type { ComponentConfig } from '../types/tv'
 import type { ImageEditorContext, Layer } from '../types/editor'
-import type { StudioLayersProps } from './ImgStudio.vue'
+import { tv } from '../utils/tv'
+import type { StudioAppConfig } from '../types/studio'
+
+export type StudioLayers = ComponentConfig<typeof theme, AppConfig, 'studio'>
+
+export interface StudioLayersProps {
+  headless?: boolean
+  ui?: StudioLayers['slots']
+}
+</script>
+
+<script setup lang="ts">
+const appConfig = useAppConfig() as StudioAppConfig
 
 const props = defineProps<StudioLayersProps>()
 
 const imgStudio = inject<ImageEditorContext>('imgStudio')
+
+const resUI = computed(() => tv({ extend: tv(theme), ...(appConfig.ui?.layers || {}) })(props.ui))
 
 const layers = computed(() => imgStudio?.layers.value || [])
 
@@ -39,43 +55,47 @@ const getLayerIcon = (type: string) => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-3">
-    <div v-if="!props.headless" class="flex items-center justify-between px-2">
-      <h4 class="text-[10px] font-bold uppercase tracking-widest text-muted">
+  <div :class="resUI.root()">
+    <div v-if="!props.headless" :class="resUI.header()">
+      <h4 :class="resUI.title()">
         Layers
       </h4>
       <UButton
         icon="i-lucide-plus"
         variant="ghost"
         size="xs"
-        color="neutral" />
+        color="neutral"
+        :class="resUI.addButton()" />
     </div>
 
-    <div class="flex flex-col gap-1">
+    <div :class="resUI.list()">
       <div
         v-for="layer in layers"
         :key="layer.id"
-        class="flex items-center gap-3 p-2 bg-inverted/5 border border-transparent rounded-lg cursor-pointer transition-all duration-200 hover:bg-inverted/10 group"
-        :class="{ 'is-active bg-primary/10 border-primary/30': layer.active, 'opacity-50': !layer.visible }"
+        :class="[
+          resUI.item(),
+          layer.active && resUI.itemActive(),
+          !layer.visible && resUI.itemHidden(),
+        ]"
         @click="selectLayer(layer)">
         <div
-          class="text-muted text-sm transition-colors hover:text-highlighted group-[.is-active]:text-primary"
+          :class="resUI.visibilityIcon()"
           @click.stop="toggleVisibility(layer)">
           <UIcon :name="layer.visible ? 'i-lucide-eye' : 'i-lucide-eye-off'" />
         </div>
 
-        <div class="w-8 h-8 flex items-center justify-center bg-default rounded border border-muted text-muted transition-colors group-[.is-active]:bg-primary group-[.is-active]:text-inverted group-[.is-active]:border-primary">
+        <div :class="resUI.thumbnail()">
           <UIcon :name="getLayerIcon(layer.type)" />
         </div>
 
-        <div class="flex-1 flex flex-col overflow-hidden">
-          <span class="text-[13px] font-medium text-default truncate">{{ layer.name }}</span>
-          <span class="text-[10px] text-muted uppercase tracking-tight">{{ layer.type }}</span>
+        <div :class="resUI.content()">
+          <span :class="resUI.name()">{{ layer.name }}</span>
+          <span :class="resUI.type()">{{ layer.type }}</span>
         </div>
 
         <div
           v-if="layer.id !== 'base'"
-          class="opacity-0 group-hover:opacity-100 text-muted transition-all hover:text-error"
+          :class="resUI.deleteButton()"
           @click.stop="deleteLayer(layer.id)">
           <UIcon name="i-lucide-trash-2" />
         </div>

@@ -1,6 +1,7 @@
 export default {
   slots: {
     root: 'flex flex-col w-full h-full bg-elevated overflow-hidden',
+    header: 'shrink-0 w-full z-10',
     toolbar: 'flex-1 flex overflow-hidden relative',
     viewport: 'flex-1 overflow-hidden relative will-change-scroll',
     canvasWrapper: 'will-change-transform shrink-0',

@@ -1,11 +1,29 @@
-<script setup lang="ts">
+<script lang="ts">
 import { inject, ref, computed } from 'vue'
+import type { AppConfig } from '@nuxt/schema'
+import theme from '../utils/themes/img-aspect-presets'
+import type { ComponentConfig } from '../types/tv'
 import type { ImageEditorContext, AspectPreset } from '../types/editor'
-import type { StudioAspectProps } from './ImgStudio.vue'
+import { tv } from '../utils/tv'
+import type { StudioAppConfig } from '../types/studio'
+
+export type StudioAspect = ComponentConfig<typeof theme, AppConfig, 'studio'>
+
+export interface StudioAspectProps {
+  headless?: boolean
+  presets?: AspectPreset[]
+  ui?: StudioAspect['slots']
+}
+</script>
+
+<script setup lang="ts">
+const appConfig = useAppConfig() as StudioAppConfig
 
 const props = defineProps<StudioAspectProps>()
 
 const imgStudio = inject<ImageEditorContext>('imgStudio')
+
+const resUI = computed(() => tv({ extend: tv(theme), ...(appConfig.ui?.aspect || {}) })(props.ui))
 
 const defaultPresets: AspectPreset[] = [
   { id: 'ig-post', name: 'IG Post', icon: 'i-simple-icons-instagram', ratio: 1 / 1, platform: 'Instagram' },
@@ -32,14 +50,14 @@ const applyRatio = (preset: AspectPreset) => {
 </script>
 
 <template>
-  <div class="space-y-4 select-none">
-    <div v-if="!props.headless" class="flex items-center justify-between">
-      <h3 class="text-[10px] font-bold uppercase tracking-widest text-muted">
+  <div :class="resUI.root()">
+    <div v-if="!props.headless" :class="resUI.header()">
+      <h3 :class="resUI.title()">
         Aspect Ratios
       </h3>
     </div>
 
-    <div class="grid grid-cols-2 gap-2">
+    <div :class="resUI.grid()">
       <UButton
         v-for="preset in activePresets"
         :key="preset.id"
@@ -48,7 +66,7 @@ const applyRatio = (preset: AspectPreset) => {
         :color="activePreset === preset.id ? 'primary' : 'neutral'"
         variant="soft"
         size="xs"
-        class="justify-start truncate"
+        :class="resUI.preset()"
         @click="applyRatio(preset)" />
     </div>
   </div>
