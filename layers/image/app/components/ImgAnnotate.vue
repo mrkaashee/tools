@@ -299,16 +299,16 @@ onUnmounted(() => {
           <template v-if="selectedId === ann.id">
             <template v-if="ann.type === 'rect'">
               <foreignObject :x="ann.x - 12" :y="ann.y - 12" width="24" height="24">
-                <ImgHandler position="top-left" @mousedown.stop="initiateResize($event, ann, 'tl')" @touchstart.stop="initiateResize($event, ann, 'tl')" />
+                <ImgHandler position="top-left" @mousedown.stop="initiateResize($event, ann, 'top-left')" @touchstart.stop="initiateResize($event, ann, 'top-left')" />
               </foreignObject>
               <foreignObject :x="ann.x + ann.width - 12" :y="ann.y - 12" width="24" height="24">
-                <ImgHandler position="top-right" @mousedown.stop="initiateResize($event, ann, 'tr')" @touchstart.stop="initiateResize($event, ann, 'tr')" />
+                <ImgHandler position="top-right" @mousedown.stop="initiateResize($event, ann, 'top-right')" @touchstart.stop="initiateResize($event, ann, 'top-right')" />
               </foreignObject>
               <foreignObject :x="ann.x - 12" :y="ann.y + ann.height - 12" width="24" height="24">
-                <ImgHandler position="bottom-left" @mousedown.stop="initiateResize($event, ann, 'bl')" @touchstart.stop="initiateResize($event, ann, 'bl')" />
+                <ImgHandler position="bottom-left" @mousedown.stop="initiateResize($event, ann, 'bottom-left')" @touchstart.stop="initiateResize($event, ann, 'bottom-left')" />
               </foreignObject>
               <foreignObject :x="ann.x + ann.width - 12" :y="ann.y + ann.height - 12" width="24" height="24">
-                <ImgHandler position="bottom-right" @mousedown.stop="initiateResize($event, ann, 'br')" @touchstart.stop="initiateResize($event, ann, 'br')" />
+                <ImgHandler position="bottom-right" @mousedown.stop="initiateResize($event, ann, 'bottom-right')" @touchstart.stop="initiateResize($event, ann, 'bottom-right')" />
               </foreignObject>
             </template>
 
