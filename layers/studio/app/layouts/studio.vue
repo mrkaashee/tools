@@ -58,7 +58,7 @@ console.log('rootNavigation', rootNavigation.value)
     <slot />
   </UDashboardGroup> -->
   <UMain>
-    <UHeader title="Tools" />
+    <AppHeader />
     <UContainer>
       <UPage>
         <template #left>

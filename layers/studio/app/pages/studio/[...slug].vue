@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { kebabCase } from 'scule'
-import type { ContentNavigationItem } from '@nuxt/content'
 
 const route = useRoute()
 
