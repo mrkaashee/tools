@@ -43,6 +43,7 @@ export interface StudioZoomProps {
 export interface StudioToolbarProps {
   hide?: boolean
   position?: 'left' | 'right' | 'top' | 'bottom'
+  variant?: 'sidebar' | 'ghost' | 'floating' | 'bottom'
   class?: string
 }
 
@@ -247,6 +248,7 @@ const hideCanvas = computed(() => canvasCfg.value?.hide === true)
 // toolbar
 const toolbarPosition = computed(() => toolbarCfg.value?.position ?? 'right')
 const hideToolbar = computed(() => toolbarCfg.value?.hide === true)
+const toolbarVariant = computed(() => toolbarCfg.value?.variant ?? 'sidebar')
 // uploader
 const uploaderOnly = computed((): boolean => {
   // Legacy uploaderOnly not present in new API – uploader.hideIfHasImage replaces it with flipped logic
@@ -1353,7 +1355,7 @@ defineExpose({
       <!-- Tools Sidebar — only in normal (non-fixedStencil) editor, hidden if toolbar.hide = true -->
       <aside
         v-if="!fixedStencil && hasImage && !hideToolbar"
-        :class="resUI.aside()">
+        :class="resUI.aside({ toolbarVariant })">
         <div
           :class="resUI.asideContent()">
           <!-- Prop-Based Tools -->

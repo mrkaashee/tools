@@ -38,6 +38,24 @@ export default {
         aside: 'w-full border-t border-muted h-64 max-lg:h-48',
       },
     },
+    toolbarVariant: {
+      sidebar: {
+        aside: 'bg-elevated/80 backdrop-blur-md',
+      },
+      ghost: {
+        aside: 'bg-transparent border-none shadow-none',
+      },
+      floating: {
+        toolbar: 'relative h-full',
+        aside: 'absolute z-30 bottom-12 left-1/2 -translate-x-1/2 w-fit h-auto max-w-[90%] bg-inverted/80 backdrop-blur-md border border-default/20 rounded-2xl shadow-2xl p-2 mb-safe-offset-4',
+        asideContent: 'flex-row items-center gap-4 overflow-x-auto p-2 scrollbar-none snap-x',
+      },
+      bottom: {
+        toolbar: 'flex-col-reverse relative h-full',
+        aside: 'w-full h-auto border-t border-muted bg-elevated/90 backdrop-blur-xl shrink-0',
+        asideContent: 'flex-row items-center gap-6 overflow-x-auto px-6 py-4 scrollbar-none snap-x',
+      },
+    },
     fixedStencil: {
       true: {
         viewport: 'bg-black/95',
@@ -87,6 +105,7 @@ export default {
   },
   defaultVariants: {
     toolbarPosition: 'right',
+    toolbarVariant: 'sidebar',
     fixedStencil: false,
     hasBoard: true,
     hasBorder: false,

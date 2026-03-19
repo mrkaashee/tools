@@ -140,7 +140,7 @@ const resolvedProps = computed(() => {
     </div>
 
     <!-- Actual Tool (ImgStudio) -->
-    <div v-else class="relative w-full aspect-square border border-muted rounded-xl overflow-hidden shadow-2xl bg-black/5">
+    <div v-else class="relative w-full aspect-square max-h-160 border border-muted rounded-xl overflow-hidden shadow-2xl bg-black/5">
       <ImgStudio v-bind="{ ...resolvedProps, ...$attrs }" class="absolute inset-0 w-full h-full" />
     </div>
   </div>
