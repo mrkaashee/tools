@@ -44,11 +44,6 @@ tools:
     description: Convert between PNG, JPEG, and WebP.
     to: /studio/image/convert
     icon: i-lucide-shuffle
-  - title: Examples
-    description: Real-world use cases and examples.
-    to: /studio/image/examples
-    icon: i-lucide-lightbulb
-    badge: New
 ---
 ::
 
