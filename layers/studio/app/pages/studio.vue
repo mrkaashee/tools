@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-definePageMeta({ layout: 'image-studio' })
+definePageMeta({ layout: 'studio' })
 </script>
 
 <template>

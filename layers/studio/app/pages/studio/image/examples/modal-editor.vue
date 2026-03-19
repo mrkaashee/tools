@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { ChangeEvent } from '../../../types/editor'
+import type { ChangeEvent } from '#layers/image/app/types/editor'
 
 const isOpen = ref(false)
 const selectedImage = ref<string | null>(null)
@@ -71,7 +71,7 @@ const handleSave = () => {
         <div class="flex justify-center">
           <UButton
             label="← Back to Examples"
-            to="/image-studio/examples"
+            to="/studio/image/examples"
             variant="ghost"
             color="neutral" />
         </div>

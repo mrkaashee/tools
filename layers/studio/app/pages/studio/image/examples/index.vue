@@ -29,7 +29,7 @@
             <p class="text-sm text-muted mb-4">
               WhatsApp-style avatar editor built with raw HTML Canvas and drag-to-reposition functionality.
             </p>
-            <UButton label="Try Example" to="/image-studio/examples/avatar" color="neutral" variant="soft" block />
+            <UButton label="Try Example" to="/studio/image/examples/avatar" color="neutral" variant="soft" block />
           </UCard>
 
           <UCard class="border-2 border-accented">
@@ -47,7 +47,7 @@
             <p class="text-sm text-muted mb-4">
               A streamlined avatar creation workflow utilizing the built-in <code>ImgStudio</code> and <code>Stencil</code> layer system.
             </p>
-            <UButton label="Try Editor Mode" to="/image-studio/examples/avatar-editor" color="primary" block />
+            <UButton label="Try Editor Mode" to="/studio/image/examples/avatar-editor" color="primary" block />
           </UCard>
 
           <UCard class="border-2 border-accented">
@@ -65,7 +65,7 @@
             <p class="text-sm text-muted mb-4">
               Drag-to-reposition a banner image inside a fixed 16:9 (or custom) ratio crop window — perfect for covers and sliders.
             </p>
-            <UButton label="Try Banner Editor" to="/image-studio/examples/banner-editor" color="primary" block />
+            <UButton label="Try Banner Editor" to="/studio/image/examples/banner-editor" color="primary" block />
           </UCard>
 
           <UCard class="border-2 border-accented">
@@ -83,7 +83,7 @@
             <p class="text-sm text-muted mb-4">
               Profile picture cropping inside a modal workflow — triggered only after image selection.
             </p>
-            <UButton label="Try Modal Editor" to="/image-studio/examples/modal-editor" color="primary" block />
+            <UButton label="Try Modal Editor" to="/studio/image/examples/modal-editor" color="primary" block />
           </UCard>
 
           <UCard class="opacity-50">
@@ -108,7 +108,7 @@
         </div>
 
         <div class="flex justify-center mt-8">
-          <UButton label="← Back to Studio" to="/image-studio" variant="ghost" />
+          <UButton label="← Back to Studio" to="/studio/image" variant="ghost" />
         </div>
       </div>
     </UContainer>

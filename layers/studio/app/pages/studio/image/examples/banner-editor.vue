@@ -15,7 +15,7 @@
               Drag and zoom your image behind a fixed 16:9 crop window — like setting a cover photo.
             </p>
           </div>
-          <UButton label="← Back" to="/image-studio/examples" variant="ghost" />
+          <UButton label="← Back" to="/studio/image/examples" variant="ghost" />
         </div>
 
         <!-- Editor: tall enough to give the 16:9 mask room to breathe -->

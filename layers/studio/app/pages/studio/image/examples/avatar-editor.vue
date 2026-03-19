@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { ChangeEvent } from '../../../types/editor'
+import type { ChangeEvent } from '#layers/image/app/types/editor'
 
 const img = ref('https://images.pexels.com/photos/1036622/pexels-photo-1036622.jpeg')
 
@@ -51,7 +51,7 @@ const onChange = (payload: ChangeEvent) => {
                     icon="i-lucide-download"
                     color="primary"
                     @click="editor.applyAndExport('avatar.png')" />
-                  <UButton label="← Back" to="/image-studio/examples" variant="ghost" />
+                  <UButton label="← Back" to="/studio/image/examples" variant="ghost" />
                 </div>
               </div>
             </template>

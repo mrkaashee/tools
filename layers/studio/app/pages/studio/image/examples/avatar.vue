@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import ImgStudio from '../../../components/ImgStudio.vue'
-import CircleStencil from '../../../components/CircleStencil.vue'
+import ImgStudio from '#layers/image/app/components/ImgStudio.vue'
+import CircleStencil from '#layers/image/app/components/CircleStencil.vue'
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const imageUrl = ref<string | null>(null)
@@ -56,7 +56,7 @@ async function handleSave() {
               Upload and position your profile picture
             </p>
           </div>
-          <UButton label="← Back" to="/image-studio/examples" variant="ghost" />
+          <UButton label="← Back" to="/studio/image/examples" variant="ghost" />
         </div>
 
         <!-- Main Content -->

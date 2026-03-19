@@ -91,7 +91,7 @@ export interface StudioCropperProps {
     height?: number
   }
   initialCropPercent?: number
-  grid?: boolean
+  gridLines?: boolean
   outputSize?: {
     width?: number
     height?: number
@@ -832,7 +832,7 @@ useEventListener(window, 'resize', fitToScreen)
 
 // Mouse wheel zoom
 useEventListener(viewportRef, 'wheel', (e: WheelEvent) => {
-  if (!hasImage.value || !viewportRef.value) return
+  if (!hasImage.value || !viewportRef.value || !zoomCfg.value) return
   e.preventDefault()
 
   const rect = viewportRef.value.getBoundingClientRect()
@@ -883,7 +883,7 @@ const handleTouchStart = (e: TouchEvent) => {
 }
 
 const handleTouchMove = (e: TouchEvent) => {
-  if (e.touches.length !== 2 || pinchStartDistance === 0 || !viewportRef.value) return
+  if (e.touches.length !== 2 || pinchStartDistance === 0 || !viewportRef.value || !zoomCfg.value) return
   e.preventDefault()
 
   const touch1 = e.touches[0]
@@ -1280,32 +1280,34 @@ defineExpose({
               floatingBarPosition === 'top' ? 'top-4' : 'bottom-4',
               resUI.floatingBar(),
             ]">
-            <UTooltip text="Zoom Out">
-              <UButton
-                icon="i-lucide-zoom-out"
-                size="xs"
-                color="neutral"
-                variant="ghost"
-                :disabled="zoomLevel <= minZoom"
-                @click="zoomOut" />
-            </UTooltip>
-            <span class="text-[10px] font-mono text-muted min-w-10 text-center tabular-nums">
-              {{ Math.round(zoomLevel * 100) }}%
-            </span>
-            <UTooltip text="Zoom In">
-              <UButton
-                icon="i-lucide-zoom-in"
-                size="xs"
-                color="neutral"
-                variant="ghost"
-                :disabled="zoomLevel >= maxZoom"
-                @click="zoomIn" />
-            </UTooltip>
-            <div class="w-px h-4 bg-inverted/20 mx-1" />
-            <UTooltip text="Fit to screen (0)">
-              <UButton icon="i-lucide-maximize-2" size="xs" color="neutral" variant="ghost" @click="resetZoom" />
-            </UTooltip>
-            <div class="w-px h-4 bg-inverted/20 mx-1" />
+            <template v-if="zoomCfg">
+              <UTooltip text="Zoom Out">
+                <UButton
+                  icon="i-lucide-zoom-out"
+                  size="xs"
+                  color="neutral"
+                  variant="ghost"
+                  :disabled="zoomLevel <= minZoom"
+                  @click="zoomOut" />
+              </UTooltip>
+              <span class="text-[10px] font-mono text-muted min-w-10 text-center tabular-nums">
+                {{ Math.round(zoomLevel * 100) }}%
+              </span>
+              <UTooltip text="Zoom In">
+                <UButton
+                  icon="i-lucide-zoom-in"
+                  size="xs"
+                  color="neutral"
+                  variant="ghost"
+                  :disabled="zoomLevel >= maxZoom"
+                  @click="zoomIn" />
+              </UTooltip>
+              <div class="w-px h-4 bg-inverted/20 mx-1" />
+              <UTooltip text="Fit to screen (0)">
+                <UButton icon="i-lucide-maximize-2" size="xs" color="neutral" variant="ghost" @click="resetZoom" />
+              </UTooltip>
+              <div class="w-px h-4 bg-inverted/20 mx-1" />
+            </template>
             <UTooltip text="Undo (Ctrl+Z)">
               <UButton
                 icon="i-lucide-undo-2"

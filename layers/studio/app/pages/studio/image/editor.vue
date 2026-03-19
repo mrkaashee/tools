@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import ImgStudio from '../../components/ImgStudio.vue'
+import ImgStudio from '#layers/image/app/components/ImgStudio.vue'
 
 const img = ref('https://images.pexels.com/photos/4323307/pexels-photo-4323307.jpeg')
 const imageUrl = ref('')

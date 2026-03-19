@@ -32,12 +32,12 @@ const props = withDefaults(defineProps<StudioCropperProps>(), {
   initialCropPercent: 80,
   grid: true,
   borderStyle: 'solid',
-  enableZoom: true,
+  enableZoom: false,
   minZoom: 1,
   maxZoom: 5,
   zoomStep: 0.1,
   zoomSpeed: 0.1,
-  showZoomControls: true,
+  showZoomControls: false,
 })
 
 const emit = defineEmits<CropperEmits>()
@@ -175,6 +175,12 @@ const handleWheel = (e: WheelEvent) => {
 }
 
 const handleLoad = () => {
+  if (bgImageRef.value) {
+    imgNatural.value = {
+      width: bgImageRef.value.naturalWidth,
+      height: bgImageRef.value.naturalHeight,
+    }
+  }
   imageLoaded.value = true
   imageError.value = false
   initializeCrop()

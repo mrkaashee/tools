@@ -27,7 +27,7 @@
           <p class="text-sm text-muted mb-4">
             All-in-one editor with undo/redo, history, and multiple tools in a unified interface.
           </p>
-          <UButton label="Open Editor" to="/image-studio/editor" color="primary" block />
+          <UButton label="Open Editor" to="/studio/image/editor" color="primary" block />
         </UCard>
 
         <UCard>
@@ -42,7 +42,7 @@
           <p class="text-sm text-muted mb-4">
             Crop images with multiple modes: move-box, move-image, fixed, and circle shapes with zoom support.
           </p>
-          <UButton label="Open Tool" to="/image-studio/cropper" block />
+          <UButton label="Open Tool" to="/studio/image/cropper" block />
         </UCard>
 
         <UCard>
@@ -57,7 +57,7 @@
           <p class="text-sm text-muted mb-4">
             Rotate and flip images with smooth animations. All transformations are applied to exports.
           </p>
-          <UButton label="Open Tool" to="/image-studio/transformations" block />
+          <UButton label="Open Tool" to="/studio/image/transformations" block />
         </UCard>
 
         <UCard>
@@ -72,7 +72,7 @@
           <p class="text-sm text-muted mb-4">
             Apply professional filters like grayscale, sepia, vintage, and more with manual adjustments.
           </p>
-          <UButton label="Open Tool" to="/image-studio/filters" block />
+          <UButton label="Open Tool" to="/studio/image/filters" block />
         </UCard>
 
         <UCard>
@@ -87,7 +87,7 @@
           <p class="text-sm text-muted mb-4">
             Fine-tune exposure, highlights, shadows, temperature, tint, and vibrance for perfect results.
           </p>
-          <UButton label="Open Tool" to="/image-studio/adjustments" block />
+          <UButton label="Open Tool" to="/studio/image/adjustments" block />
         </UCard>
 
         <UCard>
@@ -102,7 +102,7 @@
           <p class="text-sm text-muted mb-4">
             Scale images to custom dimensions, percentages, or popular social media presets.
           </p>
-          <UButton label="Open Tool" to="/image-studio/resize" block />
+          <UButton label="Open Tool" to="/studio/image/resize" block />
         </UCard>
 
         <UCard>
@@ -117,7 +117,7 @@
           <p class="text-sm text-muted mb-4">
             Reduce file size while maintaining quality. Choose format and compression level.
           </p>
-          <UButton label="Open Tool" to="/image-studio/compress" block />
+          <UButton label="Open Tool" to="/studio/image/compress" block />
         </UCard>
 
         <UCard>
@@ -132,7 +132,7 @@
           <p class="text-sm text-muted mb-4">
             Convert images between PNG, JPEG, and WebP formats with quality control.
           </p>
-          <UButton label="Open Tool" to="/image-studio/convert" block />
+          <UButton label="Open Tool" to="/studio/image/convert" block />
         </UCard>
 
         <UCard class="border-2 border-success">
@@ -151,7 +151,7 @@
           <p class="text-sm text-muted mb-4">
             Real-world examples like avatar upload, social media posts, and more use cases.
           </p>
-          <UButton label="View Examples" to="/image-studio/examples" color="success" block />
+          <UButton label="View Examples" to="/studio/image/examples" color="success" block />
         </UCard>
       </div>
 
