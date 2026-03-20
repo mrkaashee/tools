@@ -10,8 +10,9 @@ if (!page.value) {
 </script>
 
 <template>
-  <UPage v-if="page">
-    <UPageHeader :title="page.title">
+  <UDashboardPanel v-if="page">
+    <template #body>
+      <UPageHeader :title="page.title">
       <!-- <template #headline>
         <UBreadcrumb :items="breadcrumb" />
       </template>
@@ -35,9 +36,10 @@ if (!page.value) {
         </UButton>
         <PageHeaderLinks />
       </template> -->
-    </UPageHeader>
-    <UPageBody>
-      <ContentRenderer :value="page" />
-    </UPageBody>
-  </UPage>
+      </UPageHeader>
+      <UPageBody>
+        <ContentRenderer :value="page" />
+      </UPageBody>
+    </template>
+  </UDashboardPanel>
 </template>
