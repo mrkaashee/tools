@@ -254,17 +254,9 @@ function onReset() {
           <h2 class="text-xl font-semibold">
             5. Avatar Uploader (Modal)
           </h2>
-          <div class="flex items-center gap-6 p-6 border rounded-xl border-gray-200 dark:border-gray-800 shrink-0">
-            <UAvatar :src="avatarResult" size="3xl" />
-            <div class="flex-1 space-y-2">
-              <p class="text-sm font-medium">
-                Update your profile picture
-              </p>
-              <ImgDropZone
-                class="min-h-30! border-dashed!"
-                @load="file => { tempAvatarSrc = file; isAvatarModalOpen = true }" />
-            </div>
-          </div>
+          <ImgDropZone
+            class="min-h-30! border-dashed!"
+            @load="file => { tempAvatarSrc = file; isAvatarModalOpen = true }" />
 
           <UModal v-model:open="isAvatarModalOpen" title="Crop Profile Picture">
             <template #body>
