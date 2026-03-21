@@ -56,7 +56,7 @@ async function onDrop(e: DragEvent) {
     const dataUrl = await readFileAsDataUrl(file)
     emit('load', dataUrl)
   }
-  catch {}
+  catch (_e) { /* invalid file */ }
 }
 
 // --- File input ---
@@ -67,7 +67,7 @@ async function onFileChange(e: Event) {
     const dataUrl = await readFileAsDataUrl(file)
     emit('load', dataUrl)
   }
-  catch {}
+  catch (_e) { /* invalid file */ }
   // Reset so same file can be re-selected
   if (fileInputRef.value) fileInputRef.value.value = ''
 }
@@ -105,8 +105,11 @@ async function loadFromUrl() {
 
 <template>
   <div
-    class="img-drop-zone"
-    :class="{ 'is-dragging': isDragging, 'is-disabled': disabled }"
+    class="relative w-full h-full flex items-center justify-center border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800/50 overflow-hidden transition-colors duration-200"
+    :class="{
+      'border-primary-400 bg-primary-50/30 dark:bg-primary-900/10': isDragging,
+      'opacity-50 pointer-events-none': disabled,
+    }"
     @dragenter="onDragEnter"
     @dragover="onDragOver"
     @dragleave="onDragLeave"
@@ -122,14 +125,14 @@ async function loadFromUrl() {
 
     <!-- Default slot or built-in drop zone UI -->
     <slot>
-      <div class="drop-zone-inner">
-        <div class="drop-icon">
+      <div class="flex flex-col items-center gap-3 p-8 text-center">
+        <div class="w-20 h-20 flex items-center justify-center bg-primary-100 dark:bg-primary-900/20 rounded-full">
           <UIcon name="i-lucide-image-up" class="size-12 text-primary-400" />
         </div>
-        <p class="drop-title">
+        <p class="text-lg font-semibold text-gray-900 dark:text-gray-100">
           Drop an image here
         </p>
-        <p class="drop-sub">
+        <p class="text-sm text-gray-500 dark:text-gray-400">
           or
         </p>
         <UButton
@@ -140,12 +143,13 @@ async function loadFromUrl() {
           @click="fileInputRef?.click()" />
 
         <!-- URL input -->
-        <div class="url-row">
+        <div class="flex items-center gap-2 w-full max-w-sm">
           <UInput
             v-model="urlInput"
+            variant="subtle"
             placeholder="Paste image URL…"
             :disabled="disabled || isLoadingUrl"
-            class="flex-1"
+            class="w-full"
             @keydown.enter="loadFromUrl">
             <template #trailing>
               <UButton
@@ -160,128 +164,24 @@ async function loadFromUrl() {
         </div>
         <p
           v-if="urlError"
-          class="url-error">
+          class="text-xs text-red-500">
           {{ urlError }}
         </p>
       </div>
     </slot>
 
     <!-- Drag overlay -->
-    <Transition name="fade">
+    <Transition
+      enter-active-class="transition-opacity duration-150"
+      leave-active-class="transition-opacity duration-150"
+      enter-from-class="opacity-0"
+      leave-to-class="opacity-0">
       <div
         v-if="isDragging"
-        class="drag-overlay">
+        class="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-primary-100/80 dark:bg-primary-900/40 backdrop-blur-sm text-primary-500 text-xl font-semibold rounded-xl pointer-events-none">
         <UIcon name="i-lucide-image-up" class="size-16" />
         <span>Drop to load</span>
       </div>
     </Transition>
   </div>
 </template>
-
-<style scoped>
-.img-drop-zone {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px dashed var(--ui-border);
-  border-radius: var(--radius-xl);
-  background: var(--ui-bg-elevated);
-  transition: border-color 0.2s, background 0.2s;
-  overflow: hidden;
-}
-
-.img-drop-zone.is-dragging {
-  border-color: var(--ui-color-primary-400);
-  background: color-mix(in srgb, var(--ui-color-primary-500) 8%, transparent);
-}
-
-.img-drop-zone.is-disabled {
-  opacity: 0.5;
-  pointer-events: none;
-}
-
-.drop-zone-inner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 2rem;
-  text-align: center;
-}
-
-.drop-icon {
-  width: 5rem;
-  height: 5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: color-mix(in srgb, var(--ui-color-primary-500) 10%, transparent);
-  border-radius: var(--radius-full);
-}
-
-.drop-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--ui-text);
-  margin: 0;
-}
-
-.drop-sub {
-  font-size: 0.875rem;
-  color: var(--ui-text-muted);
-  margin: 0;
-}
-
-.url-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-  max-width: 24rem;
-}
-
-.url-error {
-  font-size: 0.75rem;
-  color: var(--ui-color-error-500);
-  margin: 0;
-}
-
-/* Drag overlay */
-.drag-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  background: color-mix(in srgb, var(--ui-color-primary-500) 15%, var(--ui-bg));
-  backdrop-filter: blur(2px);
-  color: var(--ui-color-primary-400);
-  font-size: 1.25rem;
-  font-weight: 600;
-  border-radius: inherit;
-  pointer-events: none;
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.15s;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-}
-</style>
