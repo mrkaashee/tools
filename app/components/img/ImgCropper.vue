@@ -204,65 +204,25 @@ function draw() {
 
   ctx.clearRect(0, 0, w, h)
 
-  if (config.value.fixed) {
-    // 1. Draw image ONLY inside crop area (Clpping)
-    ctx.save()
+  // 1. Draw image everywhere
+  ctx.drawImage(imgRef.value, imgState.x, imgState.y, imgState.w, imgState.h)
 
-    // Create the crop path
-    if (config.value.shape === 'round') {
-      ctx.beginPath()
-      ctx.arc(cropState.x + cropState.w / 2, cropState.y + cropState.h / 2, cropState.w / 2, 0, Math.PI * 2)
-      ctx.clip()
-    }
-    else {
-      ctx.beginPath()
-      ctx.rect(cropState.x, cropState.y, cropState.w, cropState.h)
-      ctx.clip()
-    }
+  // 2. Overlay dark mask with hole (cutout)
+  ctx.save()
+  ctx.fillStyle = config.value.fixed ? 'rgba(0, 0, 0, 0.5)' : 'rgba(0, 0, 0, 0.6)'
+  ctx.beginPath()
+  ctx.rect(0, 0, w, h) // outer boundary
 
-    // Draw image behind the clip
-    ctx.drawImage(imgRef.value, imgState.x, imgState.y, imgState.w, imgState.h)
-    ctx.restore()
-
-    // 2. Optional: Draw a subtle mask outside the crop area (inverted clip)
-    ctx.save()
-    if (config.value.shape === 'round') {
-      ctx.beginPath()
-      ctx.rect(0, 0, w, h)
-      ctx.arc(cropState.x + cropState.w / 2, cropState.y + cropState.h / 2, cropState.w / 2, 0, Math.PI * 2, true)
-      ctx.clip()
-    }
-    else {
-      ctx.beginPath()
-      ctx.rect(0, 0, w, h)
-      ctx.rect(cropState.x + cropState.w, cropState.y, -cropState.w, cropState.h) // anticlockwise rect
-      ctx.clip()
-    }
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'
-    ctx.fillRect(0, 0, w, h)
-    ctx.restore()
+  if (config.value.shape === 'round') {
+    // Create a hole by drawing in opposite direction
+    ctx.arc(cropState.x + cropState.w / 2, cropState.y + cropState.h / 2, cropState.w / 2, 0, Math.PI * 2, true)
   }
   else {
-    // Normal: Draw image everywhere + dark mask with cutout (hole)
-    // 1. Draw image
-    ctx.drawImage(imgRef.value, imgState.x, imgState.y, imgState.w, imgState.h)
-
-    // 2. Overlay dark mask with hole
-    ctx.save()
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)'
-    ctx.beginPath()
-    ctx.rect(0, 0, w, h) // outer boundary
-    if (config.value.shape === 'round') {
-      // Create a hole by drawing in opposite direction
-      ctx.arc(cropState.x + cropState.w / 2, cropState.y + cropState.h / 2, cropState.w / 2, 0, Math.PI * 2, true)
-    }
-    else {
-      // Create a hole by drawing a rect in opposite direction
-      ctx.rect(cropState.x + cropState.w, cropState.y, -cropState.w, cropState.h)
-    }
-    ctx.fill()
-    ctx.restore()
+    // Create a hole by drawing a rect in opposite direction
+    ctx.rect(cropState.x + cropState.w, cropState.y, -cropState.w, cropState.h)
   }
+  ctx.fill()
+  ctx.restore()
 
   // 4. Draw crop border
   ctx.strokeStyle = '#fff'
