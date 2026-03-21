@@ -110,9 +110,14 @@ function onReset() {
   emit('reset')
 }
 
-function onToolbarAction(action: 'apply' | 'cancel' | 'reset') {
+function onToolbarAction(action: 'apply' | 'cancel' | 'reset' | 'download') {
   if (action === 'reset') {
     onReset()
+    return
+  }
+
+  if (action === 'download') {
+    downloadImage()
     return
   }
 
@@ -138,9 +143,31 @@ function cancelCrop() {
   cropperRef.value?.cancel()
 }
 
+function downloadImage(filename = 'image.png') {
+  if (!internalSrc.value) return
+
+  // Convert data URL → Blob → Object URL for reliable cross-browser download
+  const [header, data] = internalSrc.value.split(',')
+  const mime = header.match(/:(.*?);/)?.[1] ?? 'image/png'
+  const bytes = atob(data)
+  const buf = new Uint8Array(bytes.length)
+  for (let i = 0; i < bytes.length; i++) buf[i] = bytes.charCodeAt(i)
+  const blob = new Blob([buf], { type: mime })
+  const url = URL.createObjectURL(blob)
+
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
 defineExpose({
   applyCrop,
-  cancelCrop
+  cancelCrop,
+  downloadImage
 })
 </script>
 

@@ -45,6 +45,8 @@ const src3 = ref('https://picsum.photos/id/1025/800/600')
 const src4 = ref('https://picsum.photos/id/1035/800/600')
 const src6 = ref('https://picsum.photos/id/1045/800/600')
 
+const studio1Ref = ref<InstanceType<typeof ImgStudio>>()
+
 const avatarResult = ref('https://avatars.githubusercontent.com/u/739984?v=4')
 const tempAvatarSrc = ref('')
 const isAvatarModalOpen = ref(false)
@@ -138,6 +140,7 @@ function onReset() {
             1. Standard Studio
           </h2>
           <ImgStudio
+            ref="studio1Ref"
             v-model:src="src1"
             :crop="{ presets }"
             :zoom="{ step: 0.1, max: 5 }"
@@ -150,7 +153,7 @@ function onReset() {
                 Extras
               </div>
               <UButton icon="i-lucide-wand-2" color="neutral" variant="ghost" square />
-              <UButton icon="i-lucide-download" color="neutral" variant="ghost" square />
+              <UButton icon="i-lucide-download" color="neutral" variant="ghost" square @click="studio1Ref?.downloadImage()" />
             </template>
             <template #actions>
               <UButton

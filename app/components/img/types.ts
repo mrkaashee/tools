@@ -51,5 +51,5 @@ export interface ToolbarConfig {
   items?: StudioTool[]
 }
 
-export type StudioTool = 'crop' | 'apply' | 'cancel' | 'reset' | 'none'
+export type StudioTool = 'crop' | 'apply' | 'cancel' | 'reset' | 'download' | 'none'
 export type CropShape = 'rect' | 'round'

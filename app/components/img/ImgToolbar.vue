@@ -12,12 +12,12 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   'update:activeTool': [tool: StudioTool]
-  action: [action: 'apply' | 'cancel' | 'reset']
+  action: [action: 'apply' | 'cancel' | 'reset' | 'download']
 }>()
 
 function onToolClick(tool: StudioTool) {
   if (props.disabled) return
-  if (tool === 'apply' || tool === 'cancel' || tool === 'reset') {
+  if (tool === 'apply' || tool === 'cancel' || tool === 'reset' || tool === 'download') {
     emit('action', tool)
     return
   }
@@ -26,7 +26,7 @@ function onToolClick(tool: StudioTool) {
 </script>
 
 <template>
-  <div v-if="config.show" class="img-toolbar">
+  <div v-if="config.show" class="flex flex-col items-center gap-2 py-2 px-2 bg-gray-50 dark:bg-gray-800/50 border-r border-gray-200 dark:border-gray-800 min-w-16 z-10">
     <!-- Dynamic items based on config -->
     <template v-for="item in config.items" :key="item">
       <UButton
@@ -36,8 +36,8 @@ function onToolClick(tool: StudioTool) {
         variant="ghost"
         :disabled="disabled"
         square
-        class="toolbar-btn"
-        :class="{ 'is-active': activeTool === 'crop' }"
+        class="size-12 rounded-lg"
+        :class="{ 'bg-primary-100/50 dark:bg-primary-900/20': activeTool === 'crop' }"
         @click="onToolClick('crop')" />
 
       <UButton
@@ -47,7 +47,7 @@ function onToolClick(tool: StudioTool) {
         variant="ghost"
         :disabled="disabled || activeTool === 'none'"
         square
-        class="toolbar-btn hover:text-red-500"
+        class="size-12 rounded-lg hover:text-red-500"
         @click="onToolClick('cancel')" />
 
       <UButton
@@ -57,7 +57,7 @@ function onToolClick(tool: StudioTool) {
         variant="soft"
         :disabled="disabled || activeTool === 'none'"
         square
-        class="toolbar-btn"
+        class="size-12 rounded-lg"
         @click="onToolClick('apply')" />
 
       <UButton
@@ -67,8 +67,19 @@ function onToolClick(tool: StudioTool) {
         variant="ghost"
         :disabled="disabled"
         square
-        class="toolbar-btn hover:text-red-500"
+        class="size-12 rounded-lg hover:text-red-500"
         @click="onToolClick('reset')" />
+
+      <UButton
+        v-if="item === 'download'"
+        v-tooltip="'Download'"
+        icon="i-lucide-download"
+        color="neutral"
+        variant="ghost"
+        :disabled="disabled"
+        square
+        class="size-12 rounded-lg"
+        @click="onToolClick('download')" />
     </template>
 
     <USeparator v-if="config.items && config.items.length > 0" class="my-2" />
@@ -77,27 +88,3 @@ function onToolClick(tool: StudioTool) {
     <slot />
   </div>
 </template>
-
-<style scoped>
-.img-toolbar {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  background: var(--ui-bg-elevated);
-  border-right: 1px solid var(--ui-border);
-  min-width: 4rem;
-  z-index: 10;
-}
-
-.toolbar-btn {
-  width: 3rem;
-  height: 3rem;
-  border-radius: var(--radius-lg);
-}
-
-.toolbar-btn.is-active {
-  background: color-mix(in srgb, var(--ui-color-primary-500) 15%, transparent);
-}
-</style>
