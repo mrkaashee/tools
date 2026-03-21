@@ -7,11 +7,13 @@ const activeTool2 = ref<'crop' | 'none'>('crop')
 const activeTool3 = ref<'crop' | 'none'>('crop')
 const activeTool4 = ref<'crop' | 'none'>('crop')
 const activeTool5 = ref<'crop' | 'none'>('crop')
+const activeTool6 = ref<'crop' | 'none'>('crop')
 
 const src1 = ref('https://picsum.photos/id/237/800/600')
 const src2 = ref('https://picsum.photos/id/1015/800/600')
 const src3 = ref('https://picsum.photos/id/1025/800/600')
 const src4 = ref('https://picsum.photos/id/1035/800/600')
+const src6 = ref('https://picsum.photos/id/1045/800/600')
 
 const avatarResult = ref('https://avatars.githubusercontent.com/u/739984?v=4')
 const tempAvatarSrc = ref('')
@@ -165,6 +167,23 @@ function onReset() {
             </template>
           </ImgStudio>
         </div>
+        <!-- 6. Fixed Square Cropper -->
+        <div class="space-y-4">
+          <h2 class="text-xl font-semibold">
+            6. Fixed Square Cropper
+          </h2>
+          <ImgStudio
+            v-model:src="src6"
+            v-model:active-tool="activeTool6"
+            :crop="true"
+            :crop-aspect="1"
+            crop-shape="rect"
+            fixed-crop
+            @crop:apply="onCropApply"
+            @crop:cancel="onCropCancel"
+            @reset="onReset" />
+        </div>
+
         <!-- 5. Avatar Uploader (Modal) -->
         <div class="space-y-4 xl:col-span-2 max-w-2xl mx-auto w-full">
           <h2 class="text-xl font-semibold">
