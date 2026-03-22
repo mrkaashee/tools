@@ -166,14 +166,26 @@ function initLayout(forceReCenter = false) {
         cropState.y = 0
       }
       else {
-        const d = Math.max(0, Math.min(width, height) - padding * 2)
-        cropState.w = d
-        cropState.h = d
-        cropState.x = (width - d) / 2
-        cropState.y = (height - d) / 2
+        // Maximize initial crop box based on target aspect
+        const target = activeAspect.value || 1
+        const containerAspect = width / height
+        const pad2 = padding * 2
+        if (containerAspect > target) {
+          // Container is wider than target, height is limiting
+          cropState.h = height - pad2
+          cropState.w = cropState.h * target
+        }
+        else {
+          // Container is taller than target, width is limiting
+          cropState.w = width - pad2
+          cropState.h = cropState.w / target
+        }
+        cropState.x = (width - cropState.w) / 2
+        cropState.y = (height - cropState.h) / 2
       }
     }
     else {
+      // Free mode: 80% of image size
       cropState.w = (imgW * baseScale) * 0.8
       cropState.h = (imgH * baseScale) * 0.8
       cropState.x = (width - cropState.w) / 2
@@ -187,6 +199,7 @@ function initLayout(forceReCenter = false) {
     imgState.y = (height - imgState.h) / 2
 
     applyAspect()
+    clampImgToCrop() // Ensure image covers the newly sized crop box
   }
   else {
     const oldBaseS = Math.min((oldWidth - padding * 2) / imgW, (oldHeight - padding * 2) / imgH)
@@ -408,7 +421,7 @@ function onPointerDown(e: MouseEvent | TouchEvent) {
     const move = e.type === 'touchstart' ? 'touchmove' : 'mousemove'
     const up = e.type === 'touchstart' ? 'touchend' : 'mouseup'
     const removeMove = useEventListener(window, move, onPointerMove, { passive: false })
-    const removeUp = useEventListener(window, up, (ev: any) => {
+    const removeUp = useEventListener(window, up, (ev: MouseEvent | TouchEvent) => {
       onPointerUp(ev)
       removeMove()
       removeUp()

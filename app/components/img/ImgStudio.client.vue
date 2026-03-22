@@ -201,7 +201,7 @@ defineExpose({
 <template>
   <div
     ref="containerRef"
-    class="flex flex-col w-full h-150 min-h-100 bg-white dark:bg-gray-900 border border-muted rounded-xl relative overflow-hidden"
+    class="flex flex-col w-full min-h-100 bg-white dark:bg-gray-900 border border-muted rounded-xl relative overflow-hidden"
     :class="{ 'opacity-60 pointer-events-none': disabled }">
     <!-- 1. Initial State: No Image -->
     <ImgDropZone v-if="!internalSrc" :accept="accept" @load="onImageLoad">

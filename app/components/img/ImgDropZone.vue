@@ -66,6 +66,14 @@ async function loadFromUrl() {
     isLoadingUrl.value = false
   }
 }
+
+function openFilePicker() {
+  fileInputRef.value?.click()
+}
+
+defineExpose({
+  openFilePicker
+})
 </script>
 
 <template>
