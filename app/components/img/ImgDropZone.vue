@@ -104,10 +104,12 @@ async function loadFromUrl() {
 </script>
 
 <template>
-  <div
-    class="relative w-full h-full flex items-center justify-center border-2 border-dashed border-muted rounded-xl bg-muted overflow-hidden transition-colors duration-200"
+  <UCard
+    class="relative w-full h-full overflow-hidden transition-colors duration-200 border-2 border-dashed"
+    :ui="{ body: 'flex items-center justify-center w-full h-full p-4 sm:p-6' }"
     :class="{
-      'border-primary-400 bg-primary-50/30 dark:bg-primary-900/10': isDragging,
+      'border-primary bg-primary/10': isDragging,
+      'border-muted': !isDragging,
       'opacity-50 pointer-events-none': disabled,
     }"
     @dragenter="onDragEnter"
@@ -183,5 +185,5 @@ async function loadFromUrl() {
         <span>Drop to load</span>
       </div>
     </Transition>
-  </div>
+  </UCard>
 </template>
