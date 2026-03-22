@@ -159,7 +159,7 @@ export const useToolsList = () => {
       description: 'Crop images to any aspect ratio with precision.',
       status: 'active',
       category: { icon: 'i-lucide-image', label: 'Image' },
-      to: '/image/cropper',
+      to: '/cropper',
     },
     {
       icon: 'i-lucide-scaling',
