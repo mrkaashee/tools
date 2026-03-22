@@ -4,6 +4,7 @@ import type { CropConfig, CropResult, StudioTool, ToolbarConfig, ZoomConfig, Exp
 import ImgDropZone from './ImgDropZone.vue'
 import ImgToolbar from './ImgToolbar.vue'
 import ImgCropper from './ImgCropper.vue'
+import { dataUrlToFile, downloadFile } from '~/utils/image'
 
 const props = withDefaults(defineProps<{
   src?: string
@@ -170,66 +171,14 @@ async function getFile(filename = 'image', reqFormat?: string, reqQuality?: numb
   const targetFormat = reqFormat || props.export?.defaultFormat
   const targetQuality = reqQuality || props.export?.quality || 0.9
 
-  // If there's no target format, or it's implicitly just using the existing dataUrl's format, download directly
-  if (!targetFormat || internalSrc.value.startsWith(`data:${targetFormat};`)) {
-    const parts = internalSrc.value.split(',')
-    const header = parts[0] || ''
-    const data = parts[1] || ''
-    if (!data) return null
-
-    const mime = header.match(/:(.*?);/)?.[1] ?? 'image/png'
-    const bytes = atob(data)
-    const buf = new Uint8Array(bytes.length)
-    for (let i = 0; i < bytes.length; i++) buf[i] = bytes.charCodeAt(i)
-
-    const ext = mime.split('/')[1] || 'png'
-    return new File([buf], `${filename}.${ext}`, { type: mime })
-  }
-
-  // Convert via Canvas
-  return new Promise(resolve => {
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
-    img.onload = () => {
-      const c = document.createElement('canvas')
-      c.width = img.naturalWidth
-      c.height = img.naturalHeight
-      const ctx = c.getContext('2d')
-      if (!ctx) return resolve(null)
-
-      ctx.drawImage(img, 0, 0)
-      const dataUrl = c.toDataURL(targetFormat, targetQuality)
-
-      const parts = dataUrl.split(',')
-      const header = parts[0] || ''
-      const data = parts[1] || ''
-      if (!data) return resolve(null)
-
-      const mime = header.match(/:(.*?);/)?.[1] ?? 'image/png'
-      const bytes = atob(data)
-      const buf = new Uint8Array(bytes.length)
-      for (let i = 0; i < bytes.length; i++) buf[i] = bytes.charCodeAt(i)
-
-      const ext = mime.split('/')[1] || 'png'
-      resolve(new File([buf], `${filename}.${ext}`, { type: mime }))
-    }
-    img.onerror = () => resolve(null)
-    img.src = internalSrc.value
-  })
+  return dataUrlToFile(internalSrc.value, filename, targetFormat, targetQuality)
 }
 
 async function downloadImage(filename = 'image', reqFormat?: string, reqQuality?: number) {
   const file = await getFile(filename, reqFormat, reqQuality)
   if (!file) return
 
-  const url = URL.createObjectURL(file)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = file.name
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
+  downloadFile(file)
 }
 
 function confirmDownload() {

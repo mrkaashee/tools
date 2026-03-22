@@ -1,4 +1,7 @@
 <script lang="ts" setup>
+import { fileToDataUrl, urlToDataUrl } from '~/utils/image'
+import { useDropZone } from '@vueuse/core'
+
 const props = withDefaults(defineProps<{
   accept?: string
   disabled?: boolean
@@ -12,59 +15,32 @@ const emit = defineEmits<{
 }>()
 
 // --- State ---
-const isDragging = ref(false)
 const urlInput = ref('')
 const urlError = ref('')
 const isLoadingUrl = ref(false)
 const fileInputRef = ref<HTMLInputElement>()
+const dropZoneRef = ref()
 
-// --- File reader helper ---
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    if (!file.type.startsWith('image/')) {
-      reject(new Error('Not an image file'))
-      return
+// --- VueUse DropZone ---
+const { isOverDropZone: isDragging } = useDropZone(dropZoneRef, {
+  onDrop: async (files: File[] | null) => {
+    if (props.disabled || !files || !files.length) return
+    const file = files[0]
+    if (!file) return
+    try {
+      const dataUrl = await fileToDataUrl(file)
+      emit('load', dataUrl)
     }
-    const reader = new FileReader()
-    reader.onload = e => resolve(e.target!.result as string)
-    reader.onerror = () => reject(new Error('Failed to read file'))
-    reader.readAsDataURL(file)
-  })
-}
-
-// --- Drag events ---
-function onDragEnter(e: DragEvent) {
-  e.preventDefault()
-  if (!props.disabled) isDragging.value = true
-}
-function onDragOver(e: DragEvent) {
-  e.preventDefault()
-}
-function onDragLeave(e: DragEvent) {
-  // Only clear if leaving the zone entirely
-  if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) {
-    isDragging.value = false
+    catch { /* invalid file */ }
   }
-}
-async function onDrop(e: DragEvent) {
-  e.preventDefault()
-  isDragging.value = false
-  if (props.disabled) return
-  const file = e.dataTransfer?.files?.[0]
-  if (!file) return
-  try {
-    const dataUrl = await readFileAsDataUrl(file)
-    emit('load', dataUrl)
-  }
-  catch { /* invalid file */ }
-}
+})
 
 // --- File input ---
 async function onFileChange(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0]
   if (!file) return
   try {
-    const dataUrl = await readFileAsDataUrl(file)
+    const dataUrl = await fileToDataUrl(file)
     emit('load', dataUrl)
   }
   catch { /* invalid file */ }
@@ -79,18 +55,7 @@ async function loadFromUrl() {
   if (!url) return
   isLoadingUrl.value = true
   try {
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve()
-      img.onerror = () => reject(new Error('Failed to load image from URL'))
-      img.src = url
-    })
-    const canvas = document.createElement('canvas')
-    canvas.width = img.naturalWidth
-    canvas.height = img.naturalHeight
-    canvas.getContext('2d')!.drawImage(img, 0, 0)
-    const dataUrl = canvas.toDataURL()
+    const dataUrl = await urlToDataUrl(url)
     emit('load', dataUrl)
     urlInput.value = ''
   }
@@ -105,17 +70,14 @@ async function loadFromUrl() {
 
 <template>
   <UCard
+    ref="dropZoneRef"
     class="relative w-full h-full overflow-hidden transition-colors duration-200 border-2 border-dashed"
     :ui="{ body: 'flex items-center justify-center w-full h-full p-4 sm:p-6' }"
     :class="{
       'border-primary bg-primary/10': isDragging,
       'border-muted': !isDragging,
       'opacity-50 pointer-events-none': disabled,
-    }"
-    @dragenter="onDragEnter"
-    @dragover="onDragOver"
-    @dragleave="onDragLeave"
-    @drop="onDrop">
+    }">
     <!-- Hidden real file input -->
     <input
       ref="fileInputRef"
