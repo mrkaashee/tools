@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { ref, watch, computed } from 'vue'
+import { useStorage } from '@vueuse/core'
 import type { CropConfig, CropResult, StudioTool, ToolbarConfig, ZoomConfig, ExportConfig } from './types'
 import ImgDropZone from './ImgDropZone.vue'
 import ImgToolbar from './ImgToolbar.vue'
@@ -90,7 +91,8 @@ watch(activeTool, tool => {
 
 // --- Export UI State ---
 const isDownloadModalOpen = ref(false)
-const selectedExportFormat = ref(props.export?.defaultFormat || props.export?.formats?.[0] || 'image/jpeg')
+const selectedExportFormat = useStorage('img-studio-export-format', props.export?.defaultFormat || props.export?.formats?.[0] || 'image/jpeg')
+const selectedExportQuality = useStorage('img-studio-export-quality', 0.9)
 
 watch(() => props.export?.defaultFormat, val => {
   if (val) selectedExportFormat.value = val
@@ -168,8 +170,8 @@ function cancelCrop() {
 async function getFile(filename = 'image', reqFormat?: string, reqQuality?: number): Promise<File | null> {
   if (!internalSrc.value) return null
 
-  const targetFormat = reqFormat || props.export?.defaultFormat
-  const targetQuality = reqQuality || props.export?.quality || 0.9
+  const targetFormat = reqFormat || selectedExportFormat.value || props.export?.defaultFormat
+  const targetQuality = reqQuality ?? selectedExportQuality.value ?? props.export?.quality ?? 0.9
 
   return dataUrlToFile(internalSrc.value, filename, targetFormat, targetQuality)
 }
@@ -264,6 +266,9 @@ defineExpose({
       <div class="space-y-4">
         <UFormField v-if="exportFormatOptions.length" label="Export Format">
           <USelect v-model="selectedExportFormat" :items="exportFormatOptions" value-key="value" />
+        </UFormField>
+        <UFormField label="Quality" :hint="`${Math.round(selectedExportQuality * 100)}%` ">
+          <USlider v-model="selectedExportQuality" :min="0.1" :max="1" :step="0.1" color="primary" />
         </UFormField>
       </div>
     </template>

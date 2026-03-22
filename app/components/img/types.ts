@@ -9,6 +9,10 @@ export interface CropResult {
   height: number
   /** Cropped image as a data URL */
   dataUrl: string
+  /** Final output width after scaling */
+  outWidth?: number
+  /** Final output height after scaling */
+  outHeight?: number
 }
 
 export interface AspectPreset {
@@ -28,6 +32,8 @@ export interface CropConfig {
   shape?: 'rect' | 'round'
   fixed?: boolean
   size?: number
+  width?: number
+  height?: number
   /** Output format, defaults to 'image/png' */
   format?: 'image/jpeg' | 'image/png' | 'image/webp' | (string & {})
   /** Output quality for jpeg/webp between 0 and 1 */

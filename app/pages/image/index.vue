@@ -127,12 +127,16 @@ const activeTool3 = ref<StudioTool>('crop')
 const activeTool4 = ref<StudioTool>('crop')
 const activeTool5 = ref<StudioTool>('crop')
 const activeTool6 = ref<StudioTool>('crop')
+const activeTool7 = ref<StudioTool>('crop')
+const activeTool8 = ref<StudioTool>('crop')
 
 const src1 = ref('https://picsum.photos/id/237/800/600')
 const src2 = ref('https://picsum.photos/id/1015/800/600')
 const src3 = ref('https://picsum.photos/id/1025/800/600')
 const src4 = ref('https://picsum.photos/id/1035/800/600')
 const src6 = ref('https://picsum.photos/id/1045/800/600')
+const src7 = ref('https://picsum.photos/id/1055/800/600')
+const src8 = ref('https://picsum.photos/id/1065/800/600')
 
 const studio1Ref = ref<InstanceType<typeof ImgStudio>>()
 
@@ -153,6 +157,9 @@ function onCropApply(res: CropResult) {
   console.log('Crop applied')
   console.log('Output data URL:', res.dataUrl.substring(0, 30) + '...')
   console.log('Source Coordinates:', { x: Math.round(res.x), y: Math.round(res.y), width: Math.round(res.width), height: Math.round(res.height) })
+  if (res.outWidth && res.outHeight) {
+    console.log('Final Output Size:', { width: res.outWidth, height: res.outHeight })
+  }
 }
 
 async function onAvatarCropApply(res: CropResult) {
@@ -400,6 +407,7 @@ function onPlaygroundDownload() {
             </template>
           </ImgStudio>
         </div>
+
         <!-- 6. Fixed Square Cropper -->
         <div class="space-y-4">
           <h2 class="text-xl font-semibold">
@@ -409,6 +417,36 @@ function onPlaygroundDownload() {
             v-model:src="src6"
             v-model:active-tool="activeTool6"
             :crop="{ aspect: 1, shape: 'rect', fixed: true }"
+            :toolbar="{ show: true, items: ['crop'] }"
+            @crop:apply="onCropApply"
+            @crop:cancel="onCropCancel"
+            @reset="onReset" />
+        </div>
+
+        <!-- 7. Fixed Banner Cropper -->
+        <div class="space-y-4">
+          <h2 class="text-xl font-semibold">
+            7. Fixed Banner (1200x514)
+          </h2>
+          <ImgStudio
+            v-model:src="src7"
+            v-model:active-tool="activeTool7"
+            :crop="{ width: 1200, height: 514, shape: 'rect', fixed: true }"
+            :toolbar="{ show: true, items: ['crop'] }"
+            @crop:apply="onCropApply"
+            @crop:cancel="onCropCancel"
+            @reset="onReset" />
+        </div>
+
+        <!-- 8. Fixed Slider Cropper -->
+        <div class="space-y-4">
+          <h2 class="text-xl font-semibold">
+            8. Fixed Slider (1200x400)
+          </h2>
+          <ImgStudio
+            v-model:src="src8"
+            v-model:active-tool="activeTool8"
+            :crop="{ width: 1200, height: 400, shape: 'rect', fixed: true }"
             :toolbar="{ show: true, items: ['crop'] }"
             @crop:apply="onCropApply"
             @crop:cancel="onCropCancel"

@@ -1,5 +1,6 @@
 <script lang="ts" setup>
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
+import { useEventListener, useResizeObserver } from '@vueuse/core'
 import type { CropResult, CropConfig, ZoomConfig } from './types'
 
 const props = defineProps<{
@@ -22,6 +23,8 @@ const config = computed(() => ({
   fixed: props.crop?.fixed ?? false,
   zoom: props.zoom ?? false,
   size: props.crop?.size,
+  width: props.crop?.width,
+  height: props.crop?.height,
   format: props.crop?.format ?? (props.crop?.shape === 'round' ? 'image/png' : 'image/jpeg'),
   quality: props.crop?.quality ?? 0.9
 }))
@@ -57,14 +60,22 @@ function parseAspect(val: string | number | null | undefined): number | null {
 }
 
 const activeAspect = ref<number | null>(
-  config.value.shape === 'round' ? 1 : parseAspect(config.value.aspect)
+  config.value.shape === 'round'
+    ? 1
+    : (parseAspect(config.value.aspect) ?? (config.value.width && config.value.height ? config.value.width / config.value.height : null))
 )
 
-// Apply aspect from presets if prop changes
 watch(() => config.value.aspect, val => {
   if (config.value.shape === 'round') return // always 1:1 for round
-  activeAspect.value = parseAspect(val)
+  activeAspect.value = parseAspect(val) ?? (config.value.width && config.value.height ? config.value.width / config.value.height : null)
   applyAspect()
+})
+
+watch([() => config.value.width, () => config.value.height], () => {
+  if (config.value.aspect === undefined || config.value.aspect === null) {
+    activeAspect.value = (config.value.width && config.value.height) ? config.value.width / config.value.height : null
+    applyAspect()
+  }
 })
 
 const containerRef = ref<HTMLElement>()
@@ -85,30 +96,20 @@ let startImg = { x: 0, y: 0, w: 0, h: 0 }
 
 const hoverCursor = ref('default')
 const HANDLE_SIZE = 12
-let resizeObserver: ResizeObserver | null = null
 
 // --- Initialization ---
 onMounted(async () => {
   if (canvasRef.value) {
     ctx = canvasRef.value.getContext('2d')
-    canvasRef.value.addEventListener('wheel', onWheel, { passive: false })
   }
-  if (containerRef.value) {
-    resizeObserver = new ResizeObserver(() => {
-      initLayout()
-    })
-    resizeObserver.observe(containerRef.value)
-  }
-  window.addEventListener('resize', initLayout)
   await loadImage()
 })
 
-onUnmounted(() => {
-  if (resizeObserver) resizeObserver.disconnect()
-  window.removeEventListener('resize', initLayout)
-  if (canvasRef.value) {
-    canvasRef.value.removeEventListener('wheel', onWheel)
-  }
+useEventListener(canvasRef, 'wheel', onWheel, { passive: false })
+useEventListener(typeof window !== 'undefined' ? window : null, 'resize', initLayout)
+
+useResizeObserver(containerRef, () => {
+  initLayout()
 })
 
 async function loadImage() {
@@ -427,8 +428,15 @@ function onPointerDown(e: MouseEvent | TouchEvent) {
   startImg = { ...imgState }
 
   if (typeof window !== 'undefined') {
-    window.addEventListener(e.type === 'touchstart' ? 'touchmove' : 'mousemove', onPointerMove, { passive: false })
-    window.addEventListener(e.type === 'touchstart' ? 'touchend' : 'mouseup', onPointerUp)
+    const moveEvent = e.type === 'touchstart' ? 'touchmove' : 'mousemove'
+    const upEvent = e.type === 'touchstart' ? 'touchend' : 'mouseup'
+
+    const removeMove = useEventListener(window, moveEvent, onPointerMove, { passive: false })
+    const removeUp = useEventListener(window, upEvent, (ev: MouseEvent | TouchEvent) => {
+      onPointerUp(ev)
+      removeMove()
+      removeUp()
+    })
   }
 }
 
@@ -628,8 +636,8 @@ function apply() {
   const pw = cropState.w / imgState.scale
   const ph = cropState.h / imgState.scale
 
-  const outW = config.value.size || pw
-  const outH = config.value.size || ph
+  const outW = config.value.width || config.value.size || pw
+  const outH = config.value.height || config.value.size || ph
 
   const c = document.createElement('canvas')
   c.width = outW
@@ -656,6 +664,8 @@ function apply() {
     y: py,
     width: pw,
     height: ph,
+    outWidth: outW,
+    outHeight: outH,
     dataUrl: c.toDataURL(config.value.format, config.value.quality)
   })
 }

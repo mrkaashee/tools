@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { StudioTool, ToolbarConfig } from './types'
+import { useMagicKeys, whenever } from '@vueuse/core'
 
 const props = withDefaults(defineProps<{
   activeTool: StudioTool
@@ -23,21 +24,41 @@ function onToolClick(tool: StudioTool) {
   }
   emit('update:activeTool', props.activeTool === tool ? 'none' : tool)
 }
+
+// --- Keyboard Shortcuts ---
+const keys = useMagicKeys({
+  passive: false,
+  onEventFired(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault()
+    }
+  }
+})
+
+const { c, r, escape, enter, ctrl_s, meta_s } = keys
+
+whenever(() => c?.value, () => onToolClick('crop'))
+whenever(() => r?.value, () => onToolClick('reset'))
+whenever(() => escape?.value, () => {
+  if (props.activeTool !== 'none') onToolClick('cancel')
+})
+whenever(() => enter?.value && props.activeTool !== 'none', () => onToolClick('apply'))
+whenever(() => ctrl_s?.value || meta_s?.value, () => onToolClick('download'))
 </script>
 
 <template>
-  <div v-if="config.show" class="flex flex-col items-center gap-2 py-2 px-2 bg-muted border-r border-muted min-w-16 z-10">
+  <div v-if="props.config.show" class="flex flex-col items-center gap-2 py-2 px-2 bg-muted border-r border-muted min-w-16 z-10">
     <!-- Dynamic items based on config -->
-    <template v-for="item in config.items" :key="item">
+    <template v-for="item in props.config.items" :key="item">
       <UButton
         v-if="item === 'crop'"
         icon="i-lucide-crop"
-        :color="activeTool === 'crop' ? 'primary' : 'neutral'"
+        :color="props.activeTool === 'crop' ? 'primary' : 'neutral'"
         variant="ghost"
-        :disabled="disabled"
+        :disabled="props.disabled"
         square
         class="size-12 rounded-lg"
-        :class="{ 'bg-primary-100/50 dark:bg-primary-900/20': activeTool === 'crop' }"
+        :class="{ 'bg-primary-100/50 dark:bg-primary-900/20': props.activeTool === 'crop' }"
         @click="onToolClick('crop')" />
 
       <UButton
@@ -45,7 +66,7 @@ function onToolClick(tool: StudioTool) {
         icon="i-lucide-x"
         color="neutral"
         variant="ghost"
-        :disabled="disabled || activeTool === 'none'"
+        :disabled="props.disabled || props.activeTool === 'none'"
         square
         class="size-12 rounded-lg hover:text-error"
         @click="onToolClick('cancel')" />
@@ -55,7 +76,7 @@ function onToolClick(tool: StudioTool) {
         icon="i-lucide-check"
         color="primary"
         variant="soft"
-        :disabled="disabled || activeTool === 'none'"
+        :disabled="props.disabled || props.activeTool === 'none'"
         square
         class="size-12 rounded-lg"
         @click="onToolClick('apply')" />
@@ -65,7 +86,7 @@ function onToolClick(tool: StudioTool) {
         icon="i-lucide-trash-2"
         color="neutral"
         variant="ghost"
-        :disabled="disabled"
+        :disabled="props.disabled"
         square
         class="size-12 rounded-lg hover:text-error"
         @click="onToolClick('reset')" />
@@ -75,13 +96,13 @@ function onToolClick(tool: StudioTool) {
         icon="i-lucide-download"
         color="neutral"
         variant="ghost"
-        :disabled="disabled"
+        :disabled="props.disabled"
         square
         class="size-12 rounded-lg"
         @click="onToolClick('download')" />
     </template>
 
-    <USeparator v-if="config.items && config.items.length > 0" class="my-2" />
+    <USeparator v-if="props.config.items && props.config.items.length > 0" class="my-2" />
 
     <!-- Slot for parent to inject extra tools -->
     <slot />
